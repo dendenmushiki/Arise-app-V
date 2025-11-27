@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==================== GLOBAL STYLES ==================== */
+
+:root {
+  font-family: 'Poppins', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  font-size: 14px;
+  color: #e0e0e0;
+
+  /* Solo Leveling Theme Colors */
+  --background: #0b0d1c;
+  --foreground: #e0e0e0;
+  --card-bg: #0d0e26;
+  --card-border: #7c3aed;
+  --button-bg: #0d0e26;
+  --button-border: #7c3aed;
+  --button-hover: #0f102b;
+  --accent: #9f7aea;
+  --muted-text: #a0a0a0;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+  font-family: var(--font-family);
+}
+
+a {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+a:hover {
+  color: #b794f4;
+}
+
+/* ==================== HEADINGS ==================== */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.4rem; }
+h4 { font-size: 1.1rem; }
+
+/* ==================== CARDS ==================== */
+
+.card {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid var(--card-border);
+  padding: 1.5rem;
+  background: var(--card-bg);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ==================== BUTTONS ==================== */
+
+button {
+  padding: 0.6em 1.2em;
+  border-radius: 0.75rem;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--foreground);
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: var(--button-hover);
+  border-color: #9f7aea;
+  transform: translateY(-1px);
+}
+
+/* ==================== TEXT UTILITIES ==================== */
+
+.description-text {
+  color: var(--muted-text);
+}
+
+.stat-value {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* ==================== LOADING SPINNER ==================== */
+
+.spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 4px solid transparent;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes borderScan {
+  0% {
+    border-color: #9f7aea;
+    box-shadow: 0 0 0 0 rgba(159, 122, 234, 0.5), inset 0 0 15px rgba(159, 122, 234, 0.2);
+  }
+  25% {
+    border-color: #b794f4;
+    box-shadow: 0 0 10px 2px rgba(159, 122, 234, 0.6), inset 0 0 20px rgba(159, 122, 234, 0.3);
+  }
+  50% {
+    border-color: #d4a5ff;
+    box-shadow: 0 0 15px 4px rgba(212, 165, 255, 0.7), inset 0 0 25px rgba(212, 165, 255, 0.4);
+  }
+  75% {
+    border-color: #b794f4;
+    box-shadow: 0 0 10px 2px rgba(159, 122, 234, 0.6), inset 0 0 20px rgba(159, 122, 234, 0.3);
+  }
+  100% {
+    border-color: #9f7aea;
+    box-shadow: 0 0 0 0 rgba(159, 122, 234, 0.5), inset 0 0 15px rgba(159, 122, 234, 0.2);
+  }
+}
+
+.animate-border-scan {
+  animation: borderScan 2.5s ease-in-out infinite;
+}
+
+/* ==================== CARD DEPTH ENHANCEMENTS ==================== */
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  pointer-events: none;
+  box-shadow: inset 0 0 8px rgba(124, 58, 237, 0.2);
+}
+
+/* ==================== CHAT SCROLLBAR / SCROLL GUTTER ==================== */
+.chat-scroll {
+  /* ensure scrollbar doesn't overlap content in modern browsers */
+  scrollbar-gutter: stable both-edges;
+}
+
+.chat-scroll::-webkit-scrollbar {
+  width: 12px;
+}
+
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(77,234,255,0.95), rgba(0,234,255,0.9));
+  border-radius: 9999px;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+  border: 2px solid rgba(11,13,22,0.6);
+}
+
+/* Firefox */
+.chat-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,234,255,0.9) transparent;
+}
+
+/* small right padding so scrollbar won't visually overlap card inner content */
+.card.chat-scroll { padding-right: 1rem; }
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 768px) {
+  .card {
+    padding: 1rem;
+    border-radius: 0.75rem;
+  }
+
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+}
