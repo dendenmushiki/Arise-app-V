@@ -38,14 +38,22 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <motion.h2
-          className="text-3xl mb-6 text-center font-heading text-white"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          LOGIN
-        </motion.h2>
+        <div className="flex flex-col items-center">
+          <img
+            src="/assets/arise-logo.png"
+            alt="Arise Logo"
+            className="w-20 h-20 object-contain rounded-md mb-4"
+          />
+
+          <motion.h2
+            className="text-3xl mb-6 text-center font-heading text-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            LOGIN
+          </motion.h2>
+        </div>
 
         <motion.div
           className="mb-4"

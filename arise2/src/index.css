@@ -48,7 +48,7 @@ a:hover {
 /* ==================== HEADINGS ==================== */
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Space Mono', monospace;
+  font-family: 'Poppins', sans-serif;
   font-weight: 700;
   color: var(--foreground);
   margin: 0;

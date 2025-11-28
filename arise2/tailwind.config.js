@@ -56,8 +56,8 @@ export default {
       },
       fontFamily: {
         sans: ['Poppins', 'sans-serif'],
-        mono: ['Space Mono', 'monospace'],
-        heading: ['Space Mono', 'monospace'],
+        mono: ['Newt', 'serif'],
+        heading: ['Newt', 'serif'],
       },
       boxShadow: {
         card: '0 4px 12px rgba(0, 0, 0, 0.5)',
