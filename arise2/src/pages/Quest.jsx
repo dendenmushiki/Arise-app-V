@@ -189,6 +189,19 @@ export default function Quest() {
       } catch (e) {
         console.error("Could not refresh profile", e);
       }
+      // Log quest completion to the Recent list
+      try {
+        await api.post("/workouts", {
+          name: quest.title,
+          sets: 0,
+          reps: quest.baseReps,
+          duration: quest.baseDuration,
+          type: 'quest',
+        });
+        window.dispatchEvent(new CustomEvent('activityLogged'));
+      } catch (e) {
+        console.error('Failed to log quest activity:', e);
+      }
     } catch (err) {
       console.error(err);
       setError(err?.response?.data?.error || "Failed to complete quest");
@@ -222,7 +235,7 @@ export default function Quest() {
     <div className="min-h-screen bg-gradient-to-br from-dark-navy to-dark-bg text-white p-6 animate-fade-in">
       <div className="max-w-3xl mx-auto">
         <motion.header
-          className="flex justify-between items-center mb-8"
+          className="w-full flex flex-col md:flex-row justify-between items-center mb-6 gap-4 max-w-[1200px] mx-auto"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}

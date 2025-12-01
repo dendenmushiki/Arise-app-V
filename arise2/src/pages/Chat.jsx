@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import io from "socket.io-client";
 import api from "../api";
@@ -29,6 +29,23 @@ export default function Chat() {
       if (msg.senderId) setOnlineUsers((prev) => new Set(prev).add(msg.senderId));
     });
 
+    // Update user avatar when server emits change
+    socket.on("user_updated", (payload) => {
+      try {
+        if (!payload || !payload.id) return;
+        setUsers((prev) => {
+          const exists = prev.find((u) => u.id === payload.id);
+          if (exists) {
+            return prev.map((u) => (u.id === payload.id ? { ...u, avatar: payload.avatar } : u));
+          }
+          // If user not present, simply return prev (could fetch /api/users if desired)
+          return prev;
+        });
+      } catch (e) {
+        // ignore
+      }
+    });
+
     socket.on("online_users", (ids) => setOnlineUsers(new Set(ids || [])));
     socket.on("user_online", (id) => setOnlineUsers((prev) => new Set(prev).add(id)));
     socket.on("user_offline", (id) =>
@@ -43,6 +60,7 @@ export default function Chat() {
 
     return () => {
       socket.off("new_message");
+      socket.off("user_updated");
       socket.off("online_users");
       socket.off("user_online");
       socket.off("user_offline");
@@ -64,6 +82,33 @@ export default function Chat() {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  /* ----------------------- USERS MAP ----------------------- */
+  const usersMap = useMemo(() => {
+    const m = new Map();
+    (users || []).forEach((u) => m.set(u.id, u));
+    return m;
+  }, [users]);
+
+  function getAvatarForId(id) {
+    const u = usersMap.get(id);
+    return (u && u.avatar) || "/assets/avatars/default-avatar.svg";
+  }
+
+  function handleAvatarError(e) {
+    const img = e.target;
+    try {
+      const src = img.src || "";
+      if (!img.dataset.triedSvg && /\.png($|\?)/i.test(src)) {
+        img.dataset.triedSvg = "true";
+        img.src = src.replace(/\.png($|\?)/i, ".svg$1");
+        return;
+      }
+    } catch (err) {
+      // ignore and fallback to default
+    }
+    img.src = "/assets/avatars/default-avatar.svg";
+  }
+
   /* ----------------------- SEND MESSAGE ----------------------- */
   function sendMessage() {
     if (!text.trim()) return;
@@ -81,12 +126,12 @@ export default function Chat() {
 
         {/* Header - centered above panels */}
         <motion.header
-          className="w-full flex justify-between items-center mb-6"
+          className="w-full flex flex-col md:flex-row justify-between items-center mb-6 gap-4"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <motion.h1 className="quest-title text-4xl" whileHover={{ scale: 1.05 }}>
+          <motion.h1 className="quest-title text-3xl md:text-4xl" whileHover={{ scale: 1.05 }}>
             CHATROOM
           </motion.h1>
 
@@ -110,15 +155,15 @@ export default function Chat() {
           </nav>
         </motion.header>
 
-        {/* Center panels below header */}
+        {/* Center panels below header (responsive: stacked on small screens, side-by-side on md+) */}
         <div className="flex justify-center">
-          <div className="flex gap-6 items-start">
+          <div className="flex flex-col md:flex-row gap-6 items-start w-full md:ml-[4vw]">
 
-            {/* ----------------------- LEFT COLUMN: CHAT (fixed size) ----------------------- */}
-            <div className="w-[820px] flex-shrink-0 flex flex-col">
+            {/* ----------------------- LEFT COLUMN: CHAT (responsive) ----------------------- */}
+            <div className="w-full md:w-[820px] flex-shrink-0 flex flex-col">
 
           {/* Chat Box */}
-          <motion.div className="card h-[72vh] flex flex-col rounded-lg border border-neon-cyan shadow-lg bg-card-bg animate-slide-up">
+          <motion.div className="card h-[110vh] md:h-[72vh] flex flex-col rounded-lg border border-neon-cyan shadow-lg bg-card-bg animate-slide-up w-full">
 
             {/* Chat Info */}
             <div className="p-4 border-b border-neon-cyan/10">
@@ -134,6 +179,8 @@ export default function Chat() {
             <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-4 chat-scroll">
               {messages.map((msg, index) => {
                   const isOwn = msg.senderId && user && msg.senderId === user.id;
+                  const avatarSrc = getAvatarForId(msg.senderId);
+                  const timeStr = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : "";
 
                   return (
                     <motion.div
@@ -145,13 +192,19 @@ export default function Chat() {
                     >
                       {!isOwn && (
                         <div className="flex items-center space-x-2 mb-1">
+                          <img
+                            src={avatarSrc}
+                            alt="avatar"
+                            onError={handleAvatarError}
+                            className="w-8 h-8 rounded-full"
+                          />
                           <span className="text-neon-cyan font-semibold text-sm">{msg.senderName || "anon"}</span>
-                          <span className="text-xs text-gray-400">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                          <span className="text-xs text-gray-400">{timeStr}</span>
                         </div>
                       )}
 
                       <div
-                        className={`max-w-[75%] px-4 py-2 rounded-2xl break-words text-sm ${
+                        className={`max-w-[90%] md:max-w-[75%] px-4 py-2 rounded-2xl break-words text-sm ${
                           isOwn
                             ? "bg-[#0f1724] border border-neon-cyan/10 shadow-[0_6px_20px_rgba(0,0,0,0.6)] text-white"
                             : "bg-[#0b1220] border border-neon-cyan/20 shadow-md text-white"
@@ -161,7 +214,15 @@ export default function Chat() {
                       </div>
 
                       {isOwn && (
-                        <span className="text-xs text-gray-400 mt-1">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                        <div className="flex items-center justify-end space-x-2 mt-1">
+                          <span className="text-xs text-gray-400">{timeStr}</span>
+                          <img
+                            src={avatarSrc}
+                            alt="avatar"
+                            onError={handleAvatarError}
+                            className="w-7 h-7 rounded-full"
+                          />
+                        </div>
                       )}
                     </motion.div>
                   );
@@ -171,7 +232,7 @@ export default function Chat() {
 
             {/* Input */}
             <div className="p-4 border-t border-neon-cyan/10">
-              <div className="flex gap-4">
+              <div className="flex flex-inline sm:flex-row gap-4">
                 <input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
@@ -181,7 +242,7 @@ export default function Chat() {
                 />
                 <button
                   onClick={sendMessage}
-                  className="px-6 py-3 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-glow-cyan transition-all duration-300 animate-glow"
+                  className="w-auto sm:w-auto px-6 sm:px-6 py-3 rounded-xl font-bold bg-gradient-to-r from-blue-600 to-blue-500 hover:shadow-glow-cyan transition-all duration-300 animate-glow"
                 >
                   SEND
                 </button>
@@ -190,9 +251,9 @@ export default function Chat() {
           </motion.div>
         </div>
 
-        {/* ----------------------- RIGHT COLUMN: USERS (aligned top) ----------------------- */}
-        <div className="w-72 flex-shrink-0">
-          <div className="card p-4 rounded-lg border border-neon-cyan shadow-lg bg-card-bg h-[72vh] flex flex-col">
+        {/* ----------------------- RIGHT COLUMN: USERS (aligned top, responsive) ----------------------- */}
+        <div className="w-full md:w-72 flex-shrink-0">
+          <div className="card p-4 rounded-lg border border-neon-cyan shadow-lg bg-card-bg h-[34vh] md:h-[72vh] flex flex-col w-full">
             {/* Header */}
             <div className="mb-4">
               <div className="text-lg font-heading">Users</div>
@@ -209,13 +270,22 @@ export default function Chat() {
                         key={u.id}
                         className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"
                       >
-                        <div
-                          className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${
-                            isOnline ? "bg-neon-cyan text-[#021019]" : "bg-gray-700 text-white"
-                          }`}
-                        >
-                          {u.username ? u.username.charAt(0).toUpperCase() : "U"}
-                        </div>
+                        {u.avatar ? (
+                          <img
+                            src={u.avatar}
+                            alt={u.username || "avatar"}
+                            onError={handleAvatarError}
+                            className={`w-9 h-9 rounded-full flex-shrink-0 ${isOnline ? "ring-2 ring-neon-cyan" : "bg-gray-700"}`}
+                          />
+                        ) : (
+                          <div
+                            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold ${
+                              isOnline ? "bg-neon-cyan text-[#021019]" : "bg-gray-700 text-white"
+                            }`}
+                          >
+                            {u.username ? u.username.charAt(0).toUpperCase() : "U"}
+                          </div>
+                        )}
                         <div className="flex-1">
                           <div className="font-medium">{u.username || "User"}</div>
                         </div>

@@ -5,5 +5,6 @@ export const useStore = create((set) => ({
   user: null,
   showQuestNotifQueued: false,
   setAuth: (token, user) => set({ token, user }),
+  updateUser: (userUpdates) => set((state) => ({ user: { ...state.user, ...userUpdates } })),
   setShowQuestNotifQueued: (v) => set({ showQuestNotifQueued: v }),
 }));

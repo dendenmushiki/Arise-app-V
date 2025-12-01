@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Play } from 'lucide-react';
+import { X, Play, Zap } from 'lucide-react';
 import { WorkoutStartModal } from './WorkoutStartModal.jsx';
+import api from '../api.js';
 
 export default function WorkoutPreviewModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [cat, setCat] = useState(null);
   const [showStart, setShowStart] = useState(false);
+  const [statNotif, setStatNotif] = useState(null);
 
   useEffect(() => {
     const handler = (e) => {
@@ -108,13 +110,48 @@ export default function WorkoutPreviewModal() {
         )}
       </AnimatePresence>
 
+      {/* Stat Point Notification Toast */}
+      <AnimatePresence>
+        {statNotif && (
+          <motion.div
+            className="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 z-[60]"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+          >
+            <Zap size={20} className="text-yellow-300" />
+            <span className="font-semibold">{statNotif}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* WorkoutStartModal Integration */}
       <WorkoutStartModal
         isOpen={showStart}
         onClose={() => setShowStart(false)}
-        onComplete={() => {
+        onComplete={async () => {
           setShowStart(false);
           setIsOpen(false);
+          // Log challenge completion to the Recent list
+          try {
+            await api.post("/workouts", {
+              name: cat?.label || 'Challenge',
+              sets: 0,
+              reps: 0,
+              duration: 0,
+              type: 'challenge',
+            });
+            window.dispatchEvent(new CustomEvent('activityLogged'));
+            
+            // Refetch profile to get updated unspent_stat_points
+            await api.get('/profile');
+            
+            // Show stat point earned notification
+            setStatNotif('+1 Stat Point Earned!');
+            setTimeout(() => setStatNotif(null), 3000);
+          } catch (e) {
+            console.error('Failed to log challenge activity:', e);
+          }
         }}
         onCancel={() => setShowStart(false)}
         workoutId={cat?.key || ''}

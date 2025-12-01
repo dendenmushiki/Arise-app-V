@@ -36,9 +36,10 @@ export default function QuestNotif() {
       const today = new Date().toISOString().slice(0, 10);
       const seenKey = `questNotifSeen:${user.id}:${today}`;
       const sessionFlag = sessionStorage.getItem('showQuestNotif');
-      let shouldShow = sessionFlag || !localStorage.getItem(seenKey);
+      // Only show if it's a forced request (login/manual trigger) or if it's the first session load for this day
+      let shouldShow = (sessionFlag && !localStorage.getItem(seenKey)) || forceShowRequest;
 
-      if (shouldShow || forceShowRequest) {
+      if (shouldShow) {
         setForceShowRequest(false);
         if (!cancelled) await fetchQuest();
       }
@@ -114,11 +115,11 @@ export default function QuestNotif() {
         dragMomentum={false}
         dragElastic={0.2}
         whileDrag={{ scale: 1.02 }}
-        initial={{ opacity: 0, scale: 0.9, y: 30 }}
+        initial={{ opacity: 0, scale: 0.95, y: 30 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        transition={{ type: 'spring', stiffness: 280, damping: 22, duration: 0.45 }}
-        className="fixed z-50 left-1/2 top-24 transform -translate-x-1/2 w-full max-w-md p-6 bg-dark-bg rounded-xl border-2 border-neon-purple shadow-2xl relative animate-border-scan cursor-grab active:cursor-grabbing"
+        exit={{ opacity: 0, scale: 0.98, y: 20 }}
+        transition={{ type: 'spring', stiffness: 240, damping: 20, duration: 0.45 }}
+        className="fixed z-50 left-1/3 top-1/4 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl p-8 bg-dark-bg rounded-2xl border-2 border-neon-purple shadow-2xl relative animate-border-scan cursor-grab active:cursor-grabbing"
       >
         {/* Floating XP Orb */}
         <motion.div
@@ -135,55 +136,48 @@ export default function QuestNotif() {
         />
 
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="quest-title text-lg text-white">Today's Quest</h3>
-          <motion.button
-            whileHover={{ scale: 1.2 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setOpen(false)}
-            className="text-neon-purple hover:text-neon-purple/80 transition text-xl"
-          >
-            <X size={24} strokeWidth={3} />
-          </motion.button>
+        <div className="flex justify-center items-center mb-6">
+          <h3 className="quest-title text-3xl text-white">Today's Quest</h3>
         </div>
 
-        {/* Quest Content */}
-        <div className="mb-6">
-          <div className="font-bold text-white text-lg">{quest.title}</div>
-          <div className="description-text text-sm text-gray-400 mt-1">{quest.description}</div>
-        </div>
+        {/* Quest Content + Actions (in a colorless bordered container with strong shadow) */}
+        <div className="mb-3 border border-transparent shadow-2xl rounded-2xl p-6" style={{ boxShadow: '0 40px 120px rgba(0,0,0,0.8)' }}>
+          <div className="mb-6">
+            <div className="font-bold text-white text-2xl flex justify-center items-center">{quest.title}</div>
+            <div className="description-text text-base text-gray-300 mt-2 flex justify-center items-center">{quest.description}</div>
+          </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-3">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-neon-purple to-purple-600 text-white font-bold rounded-xl shadow-glow-purple hover:shadow-glow-purple/80 transition-all duration-300"
-            onClick={() => {
-              setOpen(false);
-              navigate('/quest');
-            }}
-          >
-            Open Quest
-          </motion.button>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex px-9 py-3 bg-gradient-to-r from-neon-purple to-purple-600 text-white text-md font-bold rounded-2xl shadow-glow-purple hover:shadow-glow-purple/80 transition-all duration-300"
+              onClick={() => {
+                setOpen(false);
+                navigate('/quest');
+              }}
+            >
+              Open Quest
+            </motion.button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-3 py-2 border border-neon-purple text-white rounded-xl hover:border-purple-400 hover:text-purple-300 transition-all duration-300"
-            onClick={() => setOpen(false)}
-          >
-            Dismiss
-          </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className="px-5 py-3 border border-neon-purple text-white text-base rounded-2xl hover:border-purple-400 hover:text-purple-300 transition-all duration-300"
+              onClick={() => setOpen(false)}
+            >
+              Dismiss
+            </motion.button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-3 py-2 border border-yellow-500 text-yellow-300 rounded-xl hover:bg-yellow-500 hover:text-white transition-all duration-300"
-            onClick={() => remindLater(60)}
-          >
-            Remind me later
-          </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+              className="flex px-55 py-3 border border-yellow-500 text-yellow-300 text-base rounded-2xl hover:bg-yellow-500 hover:text-white transition-all duration-300"
+              onClick={() => remindLater(60)}
+            >
+              Remind me later
+            </motion.button>
+          </div>
         </div>
       </motion.div>
     </>

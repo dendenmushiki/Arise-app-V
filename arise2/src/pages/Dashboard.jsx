@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import api, { setAuthToken } from "../api";
 import { useStore } from "../store";
 import { Link, useNavigate } from "react-router-dom";
-import { Compass, Dumbbell, Flame } from "lucide-react";
+import { Compass, Dumbbell, Flame, Trophy } from "lucide-react";
+import io from "socket.io-client";
 import LevelProgress from "../components/LevelProgress";
 import CoreAttributes from "../components/CoreAttributes";
 import QuestNotif from "../components/QuestNotif.jsx";
 import { xpToLevel } from "../utils/xp";
+import ProfileBorder from "../components/ProfileBorders/ProfileBorder";
+import AvatarSelectionModal from "../components/AvatarSelectionModal";
+import BadgeDisplay from "../components/BadgeDisplay";
 
 export default function Dashboard() {
   const user = useStore((s) => s.user);
@@ -15,12 +19,18 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [milestoneNotif, setMilestoneNotif] = useState(null);
 
   useEffect(() => {
     (async () => {
       try {
         const res = await api.get("/profile");
         setProfile(res.data.user);
+        // Trigger core attributes refetch after profile loads to ensure latest data
+        if (user?.id) {
+          await api.get("/core-attributes");
+        }
       } catch (e) {
         console.error("Failed to fetch profile:", e);
         setProfile(null);
@@ -28,12 +38,39 @@ export default function Dashboard() {
         setLoading(false);
       }
     })();
-  }, []);
+
+    // Listen for milestone unlock socket events
+    const socket = io(window.location.origin, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    });
+
+    socket.on("stat_milestone", (data) => {
+      if (data.userId === user?.id) {
+        const message = `🎉 Milestone: ${data.badge_name} (${data.attribute} ${data.milestone})`;
+        setMilestoneNotif(message);
+        setTimeout(() => setMilestoneNotif(null), 5000);
+      }
+    });
+
+    return () => socket.disconnect();
+  }, [user?.id]);
 
   function logout() {
     setAuth(null, null);
     setAuthToken(null);
     navigate('/');
+  }
+
+  function handleAvatarSelected(avatarUrl) {
+    setProfile((prev) => ({ ...prev, avatar: avatarUrl }));
+  }
+
+  function handleMilestoneUnlock(milestone) {
+    setMilestoneNotif(milestone);
+    setTimeout(() => setMilestoneNotif(null), 5000);
   }
 
   if (loading) {
@@ -52,12 +89,27 @@ export default function Dashboard() {
   const { level, progress } = xpToLevel(xp);
 
   return (
-    <div className="h-screen bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white px-4">
+    <div className="h-screen bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white px-4 mt-6">
       <QuestNotif />
+
+      {/* Milestone Unlock Notification */}
+      <AnimatePresence>
+        {milestoneNotif && (
+          <motion.div
+            className="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-4 rounded-xl shadow-lg flex items-center gap-3 z-50 max-w-sm"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <Trophy size={20} className="text-yellow-300" />
+            <span className="font-semibold text-center flex-1">{milestoneNotif}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <motion.header
-        className="flex justify-between items-center mb-8"
+        className="w-full flex flex-col md:flex-row justify-between items-center mb-6 gap-4 max-w-[1200px] mx-auto"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -101,30 +153,86 @@ export default function Dashboard() {
       </motion.header>
 
       {/* Welcome & Progress Cards Container */}
-      <div className="grid grid-cols-2 gap-6 mb-8">
-        {/* Welcome Card */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Welcome Card - Enhanced with Profile */}
         <motion.section
-          className="card p-6 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-md"
+          className="lg:col-span-2 card p-6 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-md"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <motion.h2
-            className="text-2xl font-bold mb-2 text-white"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            Welcome, <span className="font-extrabold text-violet-300">{profile?.username || user?.username}</span>
-          </motion.h2>
-          <motion.p
-            className="description-text text-lg"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            Level {level} • <span className="text-violet-400 font-bold">{xp} XP</span>
-          </motion.p>
+          <div className="flex gap-6 items-start">
+            {/* Avatar with Rank Border */}
+            <motion.div
+              className="flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setShowAvatarModal(true)}
+              whileHover={{ scale: 1.05 }}
+            >
+              <ProfileBorder borderType={profile?.profileBorder || 'rankD'} size={100}>
+                <img
+                  src={profile?.avatar || '/assets/avatars/default-avatar.svg'}
+                  alt="Profile"
+                  className="w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    try {
+                      const el = e.target;
+                      const src = el.src || (profile && profile.avatar) || '';
+                      if (src && src.endsWith('.png')) {
+                        // try svg equivalent once
+                        const svgSrc = src.replace(/\.png$/i, '.svg');
+                        if (svgSrc !== src) {
+                          el.onerror = null;
+                          el.src = svgSrc;
+                          return;
+                        }
+                      }
+                    } catch (err) {}
+                    e.target.src = '/assets/avatars/default-avatar.svg';
+                  }}
+                />
+              </ProfileBorder>
+              <p className="text-center text-xs text-gray-400 mt-1">Click to change</p>
+            </motion.div>
+
+            {/* Profile Info */}
+            <div className="flex-1">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <h2 className="text-2xl font-bold text-white">{profile?.username || user?.username}</h2>
+                <p className="text-violet-300 font-semibold mt-1">{profile?.title || 'Newly Awakened'}</p>
+                <div className="flex items-center gap-3 mt-3">
+                  <span className="text-sm text-gray-400">Rank:</span>
+                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-violet-600 to-violet-500 text-white font-bold text-sm">
+                    {profile?.rank || 'D'}
+                  </span>
+                </div>
+              </motion.div>
+
+              <motion.p
+                className="description-text text-lg mt-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                Level <span className="font-bold text-violet-400">{level}</span> • 
+                <span className="text-violet-400 font-bold ml-2">{xp} XP</span>
+              </motion.p>
+
+              {/* Badges Section */}
+              <motion.div
+                className="mt-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <h3 className="text-sm font-semibold text-gray-300 mb-2">Achievements</h3>
+                <BadgeDisplay badges={profile?.badges || []} />
+              </motion.div>
+            </div>
+          </div>
         </motion.section>
 
         {/* Level Progress Card */}
@@ -146,8 +254,29 @@ export default function Dashboard() {
         </motion.section>
       </div>
 
-      {/* Stats Overview */}
-      <CoreAttributes xp={xp} level={level} />
+      {/* Avatar Selection Modal */}
+      <AvatarSelectionModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        onAvatarSelected={handleAvatarSelected}
+      />
+
+      {/* Stats Overview & Allocation */}
+      <CoreAttributes xp={xp} level={level} userId={user?.id} onMilestoneUnlock={handleMilestoneUnlock} />
+
+      {/* Milestone Notification */}
+      {milestoneNotif && (
+        <motion.div
+          className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-violet-600 to-violet-500 rounded-lg shadow-lg text-white max-w-sm z-40"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+        >
+          <div className="font-bold">🎉 Milestone Unlocked!</div>
+          <div className="text-sm mt-1">{milestoneNotif.attribute} reached {milestoneNotif.milestone}!</div>
+          <div className="text-xs mt-2 text-violet-200">New badge & border unlocked</div>
+        </motion.div>
+      )}
 
       {/* Quick Actions */}
       <motion.section

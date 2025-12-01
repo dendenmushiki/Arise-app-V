@@ -1,0 +1,118 @@
+/* Rank D: Simple static border */
+.border-rankD {
+  border: 3px solid #8b7355;
+  box-shadow: inset 0 0 8px rgba(139, 115, 85, 0.3);
+}
+
+/* Rank C: Soft glow border */
+.border-rankC {
+  border: 3px solid #60a5fa;
+  box-shadow: 0 0 15px rgba(96, 165, 250, 0.5), inset 0 0 8px rgba(96, 165, 250, 0.2);
+  animation: glowC 2s ease-in-out infinite;
+}
+
+@keyframes glowC {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.5), inset 0 0 8px rgba(96, 165, 250, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(96, 165, 250, 0.8), inset 0 0 12px rgba(96, 165, 250, 0.4);
+  }
+}
+
+/* Rank B: Animated shimmer border */
+.border-rankB {
+  border: 3px solid #818cf8;
+  position: relative;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.05) 0%, transparent 100%);
+  box-shadow: 0 0 20px rgba(129, 140, 248, 0.6), inset 0 0 10px rgba(129, 140, 248, 0.3);
+  animation: shimmerB 3s linear infinite;
+}
+
+@keyframes shimmerB {
+  0% {
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.6), inset 0 0 10px rgba(129, 140, 248, 0.3);
+  }
+  25% {
+    box-shadow: 0 0 30px rgba(129, 140, 248, 0.9), inset 0 0 15px rgba(129, 140, 248, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.6), inset 0 0 10px rgba(129, 140, 248, 0.3);
+  }
+  75% {
+    box-shadow: 0 0 30px rgba(129, 140, 248, 0.9), inset 0 0 15px rgba(129, 140, 248, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.6), inset 0 0 10px rgba(129, 140, 248, 0.3);
+  }
+}
+
+/* Rank A: Elemental aura */
+.border-rankA {
+  border: 3px solid #fbbf24;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.7), 
+              0 0 60px rgba(251, 191, 36, 0.4),
+              inset 0 0 15px rgba(251, 191, 36, 0.3);
+  animation: auraA 2.5s ease-in-out infinite;
+}
+
+@keyframes auraA {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.7), 
+                0 0 60px rgba(251, 191, 36, 0.4),
+                inset 0 0 15px rgba(251, 191, 36, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(251, 191, 36, 1), 
+                0 0 80px rgba(251, 191, 36, 0.6),
+                inset 0 0 20px rgba(251, 191, 36, 0.5);
+  }
+}
+
+/* Rank S: Full animated aura with particles */
+.border-rankS {
+  border: 3px solid #ef4444;
+  box-shadow: 0 0 40px rgba(239, 68, 68, 0.9), 
+              0 0 80px rgba(239, 68, 68, 0.6),
+              0 0 120px rgba(239, 68, 68, 0.3),
+              inset 0 0 20px rgba(239, 68, 68, 0.4);
+  animation: auraS 2s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes auraS {
+  0%, 100% {
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.9), 
+                0 0 80px rgba(239, 68, 68, 0.6),
+                0 0 120px rgba(239, 68, 68, 0.3),
+                inset 0 0 20px rgba(239, 68, 68, 0.4);
+  }
+  25% {
+    box-shadow: 0 0 60px rgba(239, 68, 68, 1), 
+                0 0 100px rgba(239, 68, 68, 0.8),
+                0 0 140px rgba(239, 68, 68, 0.5),
+                inset 0 0 25px rgba(239, 68, 68, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.9), 
+                0 0 80px rgba(239, 68, 68, 0.6),
+                0 0 120px rgba(239, 68, 68, 0.3),
+                inset 0 0 20px rgba(239, 68, 68, 0.4);
+  }
+  75% {
+    box-shadow: 0 0 60px rgba(239, 68, 68, 1), 
+                0 0 100px rgba(239, 68, 68, 0.8),
+                0 0 140px rgba(239, 68, 68, 0.5),
+                inset 0 0 25px rgba(239, 68, 68, 0.6);
+  }
+}
+
+/* Border container styles */
+.profile-border-container {
+  border-radius: 50%;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

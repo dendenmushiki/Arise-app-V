@@ -42,7 +42,12 @@ export default function Workout() {
     (async () => {
       try {
         const res = await api.get("/workouts");
-        setWorkouts(res.data.workouts || []);
+        const workouts = (res.data.workouts || []).map((w) => ({
+          ...w,
+          loggedOnly: w.loggedOnly === 1 || w.loggedOnly === true,
+          type: w.type || 'workout',
+        }));
+        setWorkouts(workouts);
       } catch (e) {
         console.error("Failed to fetch workouts:", e);
         setError("Failed to load workouts");
@@ -50,6 +55,24 @@ export default function Workout() {
         setLoading(false);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    const handleActivityLogged = async () => {
+      try {
+        const res = await api.get("/workouts");
+        const workouts = (res.data.workouts || []).map((w) => ({
+          ...w,
+          loggedOnly: w.loggedOnly === 1 || w.loggedOnly === true,
+          type: w.type || 'workout',
+        }));
+        setWorkouts(workouts);
+      } catch (e) {
+        console.error('Failed to refresh workouts after activity logged', e);
+      }
+    };
+    window.addEventListener('activityLogged', handleActivityLogged);
+    return () => window.removeEventListener('activityLogged', handleActivityLogged);
   }, []);
 
   async function handleSubmit(e) {
@@ -84,10 +107,13 @@ export default function Workout() {
         sets: Number(sets),
         reps: Number(reps),
         duration: Number(duration),
+        loggedOnly: loggedOnly ? 1 : 0,
       });
 
       const raw = (res?.data?.workout || res?.data) || res;
       const nowIso = new Date().toISOString();
+      // prefer server-provided loggedOnly when present, otherwise fall back to caller
+      const serverLogged = raw && (raw.loggedOnly === 1 || raw.loggedOnly === true || raw.loggedOnly === "1");
       const newWorkout = {
         id: raw?.id || `local-${Date.now()}`,
         name: raw?.name ?? name,
@@ -95,8 +121,9 @@ export default function Workout() {
         reps: raw?.reps ?? Number(reps),
         duration: raw?.duration ?? Number(duration),
         createdAt: raw?.createdAt ?? raw?.created_at ?? nowIso,
-        loggedOnly: !!loggedOnly,
         ...raw,
+        loggedOnly: !!serverLogged,
+        type: raw?.type || 'workout',
       };
 
       setWorkouts((w) => [newWorkout, ...w]);
@@ -149,7 +176,7 @@ export default function Workout() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white p-6 animate-fade-in">
       <motion.header
-        className="flex justify-between items-center mb-8"
+        className="w-full flex flex-col md:flex-row justify-between items-center mb-6 gap-4 max-w-[1200px] mx-auto"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -170,7 +197,7 @@ export default function Workout() {
           </motion.div>
         </nav>
       </motion.header>
-
+    <div className="md:ml-[12vw] md:mr-[12vw]">
       <motion.section
         className="card p-6 mb-8 bg-[#12141f] border border-violet-700 shadow-lg"
         initial={{ opacity: 0, y: 20 }}
@@ -286,27 +313,34 @@ export default function Workout() {
                 <div className="description-text text-sm mt-1">
                   Sets: <span className="xp-text">{w.sets}</span> | Reps: <span className="xp-text">{w.reps}</span> | Duration: <span className="xp-text">{w.duration}m</span>
                 </div>
-                {w.loggedOnly && (
-                  <div className="mt-2 inline-block px-2 py-1 text-xs rounded bg-yellow-700 text-yellow-100 font-semibold">LOGGED</div>
-                )}
               </div>
-              <div className="text-xs description-text">
-                {(() => {
-                  try {
-                    if (!w?.createdAt) return "—";
-                    const d = new Date(w.createdAt);
-                    if (isNaN(d.getTime())) return String(w.createdAt);
-                    return d.toLocaleDateString();
-                  } catch (err) {
-                    return String(w.createdAt || "—");
-                  }
-                })()}
+              <div className="flex flex-col items-end gap-2">
+                <div className="text-xs description-text">
+                  {(() => {
+                    try {
+                      if (!w?.createdAt) return "—";
+                      const d = new Date(w.createdAt);
+                      if (isNaN(d.getTime())) return String(w.createdAt);
+                      return d.toLocaleDateString();
+                    } catch (err) {
+                      return String(w.createdAt || "—");
+                    }
+                  })()}
+                </div>
+                <div className="flex gap-2">
+                  <span className="inline-block px-2 py-1 text-xs rounded font-semibold text-white" style={{ background: w.type === 'quest' ? '#7c3aed' : w.type === 'challenge' ? '#0891b2' : '#6366f1' }}>
+                    {(w.type || 'workout').toUpperCase()}
+                  </span>
+                  {!!w.loggedOnly && (
+                    <span className="inline-block px-2 py-1 text-xs rounded bg-yellow-700 text-yellow-100 font-semibold">LOGGED</span>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
       </motion.section>
-
+    </div>
       <WorkoutStartModal
         isOpen={showStartModal}
         onClose={() => {

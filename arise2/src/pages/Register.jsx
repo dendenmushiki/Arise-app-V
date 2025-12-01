@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import AwakeningAssessmentModal from '../components/AwakeningAssessmentModal';
+import { useStore } from '../store';
+import { setAuthToken } from '../api';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -10,6 +13,8 @@ export default function Register() {
   const [passwordError, setPasswordError] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showAwakening, setShowAwakening] = useState(false);
+  const [newUserId, setNewUserId] = useState(null);
   const navigate = useNavigate();
 
   const validateUsername = (value) => {
@@ -54,18 +59,69 @@ export default function Register() {
         username,
         password
       });
-      setSuccess('Registration successful! Redirecting...');
+      setSuccess('Registration successful! Starting awakening assessment...');
+      // Persist user/token to localStorage
       localStorage.setItem('user', JSON.stringify(res.data));
-      setUsername('');
-      setPassword('');
-      setTimeout(() => navigate('/'), 2000);
+
+      // Set auth in global store so Protected routes work
+      const setAuth = useStore.getState().setAuth;
+      try {
+        if (res.data && res.data.token) {
+          setAuth(res.data.token, res.data.user);
+          setAuthToken(res.data.token);
+        }
+      } catch (e) {
+        // non-fatal
+        console.warn('Failed to set auth in store', e);
+      }
+
+      setNewUserId(res.data.user.id);
+      setShowAwakening(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed');
     }
   }
 
+  const handleAwakeningComplete = (attributes) => {
+    setShowAwakening(false);
+    setUsername('');
+    setPassword('');
+    
+    // Save the stats to localStorage and Zustand store
+    if (attributes) {
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const updatedUser = {
+        ...currentUser,
+        xp: attributes.xp || 0,
+        level: attributes.level || 1,
+        rank: attributes.rank || 'D',
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // Update store with new user data
+      const updateUser = useStore.getState().updateUser;
+      try {
+        updateUser({
+          xp: attributes.xp || 0,
+          level: attributes.level || 1,
+          rank: attributes.rank || 'D',
+        });
+      } catch (e) {
+        console.warn('Failed to update store:', e);
+      }
+    }
+    
+    setTimeout(() => navigate('/dashboard'), 1000);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white p-6">
+      <AwakeningAssessmentModal
+        isOpen={showAwakening}
+        userId={newUserId}
+        onComplete={handleAwakeningComplete}
+      />
+
       <motion.div
         className="card p-8 w-96 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-lg animate-fade-in"
         initial={{ opacity: 0, y: 20 }}
