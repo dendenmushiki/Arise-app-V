@@ -42,7 +42,7 @@ export default function Login() {
             <img
               src="/assets/arise-logo.png"
               alt="Arise Logo"
-              className="w-25 h-25 object-contain rounded-md mb-2"
+              className="w-25N h-25 object-contain rounded-md mb-2"
             />
 
             <motion.h2
