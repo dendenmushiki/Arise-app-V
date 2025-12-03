@@ -52,6 +52,8 @@ export default function Quest() {
 
   const [showStartModal, setShowStartModal] = useState(false);
   const [questInProgress, setQuestInProgress] = useState(false);
+  const [xpGained, setXpGained] = useState(0);
+  const [xpFromServer, setXpFromServer] = useState(false);
 
   useEffect(() => {
     if (!token || !user) navigate("/");
@@ -68,6 +70,13 @@ export default function Quest() {
       return () => clearTimeout(timeout);
     }
   }, [toast]);
+
+  // Auto-navigate back to dashboard a few seconds after completion
+  useEffect(() => {
+    if (!completeMsg) return;
+    const t = setTimeout(() => navigate('/home'), 3000);
+    return () => clearTimeout(t);
+  }, [completeMsg, navigate]);
 
   async function fetchQuest() {
     setLoading(true);
@@ -181,7 +190,22 @@ export default function Quest() {
     try {
       playSound();
       const res = await api.post(`/quests/complete/${user.id}`, { questId: quest.id });
-      setCompleteMsg(res.data.message || "Quest complete!");
+      const raw = res?.data || res;
+      setCompleteMsg(raw.message || res.data?.message || "Quest complete!");
+
+      // Extract XP if present, support multiple field names
+      const gainedXpCandidate = raw?.xp_gained || raw?.xpGained || raw?.xp || raw?.xpEarned || raw?.xp_gain || raw?.xpGain || 0;
+      const hasXpFromServer = !!(raw?.xp_gained || raw?.xpGained || raw?.xp || raw?.xpEarned || raw?.xp_gain || raw?.xpGain);
+      let finalXp = Number(gainedXpCandidate) || 0;
+      if (!hasXpFromServer) {
+        // Fallback estimate: use quest baseDuration and baseReps
+        const setsNum = Number(0) || 0;
+        const repsNum = Number(quest?.baseReps ?? 0) || 0;
+        const durationNum = Number(quest?.baseDuration ?? 0) || 0;
+        finalXp = Math.max(1, Math.round(durationNum * 1 + setsNum * repsNum * 0.2));
+      }
+      setXpGained(finalXp);
+      setXpFromServer(hasXpFromServer);
       setToast({ message: "🎉 Quest completed!", type: "success" });
       try {
         const profileRes = await api.get("/profile");
@@ -394,7 +418,7 @@ export default function Quest() {
 
                             {/* Main message */}
                             <motion.h2
-                              className="quest-title text-3xl bg-gradient-to-r from-neon-cyan via-blue-400 to-violet-400 bg-clip-text text-transparent"
+                              className="quest-title text-3xl h-20vh bg-gradient-to-r from-neon-cyan via-blue-400 to-violet-400 bg-clip-text text-transparent"
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.2, duration: 0.5 }}
@@ -411,6 +435,19 @@ export default function Quest() {
                             >
                               {completeMsg}
                             </motion.p>
+
+                            {/* XP Gained */}
+                            {xpGained > 0 && (
+                              <motion.div
+                                className="mt-4 p-4 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-lg border border-yellow-500/30"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.4, duration: 0.4 }}
+                              >
+                                <div className="text-sm text-yellow-300 mb-1">{xpFromServer ? 'Experience Gained' : 'Estimated Experience'}</div>
+                                <div className="text-3xl font-bold text-yellow-400">+{xpGained} XP</div>
+                              </motion.div>
+                            )}
 
                             {/* Animated particles effect */}
                             <div className="relative h-12 flex items-center justify-center">
@@ -432,18 +469,7 @@ export default function Quest() {
                               ))}
                             </div>
 
-                            {/* Confirm Button */}
-                            <motion.button
-                              onClick={() => navigate("/home")}
-                              className="mt-4 px-8 py-3 rounded-xl font-bold text-lg bg-gradient-to-r from-neon-cyan to-blue-400 text-white hover:shadow-glow-cyan transition-all duration-300 animate-glow"
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.4, duration: 0.5 }}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              BACK TO DASHBOARD
-                            </motion.button>
+                            {/* Auto-navigates back to dashboard after a short delay */}
                           </div>
                         </motion.div>
                       </motion.div>
