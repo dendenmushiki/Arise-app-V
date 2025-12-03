@@ -3,12 +3,44 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api';
 
 const AVATAR_OPTIONS = [
-  '/assets/avatars/avatar-1.svg',
-  '/assets/avatars/avatar-2.svg',
-  '/assets/avatars/avatar-3.svg',
-  '/assets/avatars/avatar-4.svg',
-  '/assets/avatars/avatar-5.svg',
-  '/assets/avatars/avatar-6.svg',
+  '/assets/avatars/avatar-1.jpg',
+  '/assets/avatars/avatar-2.jpg',
+  '/assets/avatars/avatar-3.jpg',
+  '/assets/avatars/avatar-4.jpg',
+  '/assets/avatars/avatar-5.jpg',
+  '/assets/avatars/avatar-6.jpg', 
+  '/assets/avatars/avatar-7.jpg',
+  '/assets/avatars/avatar-8.jpg',
+  '/assets/avatars/avatar-9.jpg',
+  '/assets/avatars/avatar-10.jpg',
+  '/assets/avatars/avatar-11.jpg',
+  '/assets/avatars/avatar-12.jpg',
+  '/assets/avatars/avatar-13.jpg',
+  '/assets/avatars/avatar-14.jpg',
+  '/assets/avatars/avatar-15.jpg',
+  '/assets/avatars/avatar-16.jpg', 
+  '/assets/avatars/avatar-17.jpg',
+  '/assets/avatars/avatar-18.jpg',
+  '/assets/avatars/avatar-19.jpg',
+  '/assets/avatars/avatar-20.jpg',
+  '/assets/avatars/avatar-21.jpg',
+  '/assets/avatars/avatar-22.jpg',
+  '/assets/avatars/avatar-23.jpg',
+  '/assets/avatars/avatar-24.jpg',
+  '/assets/avatars/avatar-25.jpg',
+  '/assets/avatars/avatar-26.jpg', 
+  '/assets/avatars/avatar-27.jpg',
+  '/assets/avatars/avatar-28.jpg',
+  '/assets/avatars/avatar-29.jpg',
+  '/assets/avatars/avatar-30.jpg',
+  '/assets/avatars/avatar-31.jpg',
+  '/assets/avatars/avatar-32.jpg',
+  '/assets/avatars/avatar-33.jpg',
+  '/assets/avatars/avatar-34.jpg',
+  '/assets/avatars/avatar-35.jpg',
+  '/assets/avatars/avatar-36.jpg', 
+  '/assets/avatars/avatar-37.jpg',
+  '/assets/avatars/avatar-38.jpg',
 ];
 
 export default function AvatarSelectionModal({ isOpen, onClose, onAvatarSelected }) {
@@ -89,6 +121,7 @@ export default function AvatarSelectionModal({ isOpen, onClose, onAvatarSelected
         onAvatarSelected(response.data.avatar);
       }
 
+      setIsLoading(false);
       onClose();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to update avatar');
@@ -124,7 +157,7 @@ export default function AvatarSelectionModal({ isOpen, onClose, onAvatarSelected
           </motion.h2>
 
           {/* Tabs */}
-          <div className="flex gap-4 mb-6 border-b border-violet-600">
+          <div className="flex gap-4 mb-6 border-violet-600">
             <motion.button
               onClick={() => setActiveTab('preset')}
               className={`pb-3 px-4 font-semibold transition-all ${
@@ -155,8 +188,9 @@ export default function AvatarSelectionModal({ isOpen, onClose, onAvatarSelected
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              className="max-h-96 overflow-y-auto pr-2"
             >
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-5 gap-4 mb-6">
                 {AVATAR_OPTIONS.map((avatar, idx) => (
                   <motion.div
                     key={idx}
@@ -172,7 +206,7 @@ export default function AvatarSelectionModal({ isOpen, onClose, onAvatarSelected
                     <img
                       src={avatar}
                       alt={`Avatar ${idx + 1}`}
-                      className="w-full h-24 object-cover rounded"
+                      className="w-full h-20 object-cover rounded"
                       onError={(e) => {
                         try {
                           const el = e.target;
@@ -189,9 +223,6 @@ export default function AvatarSelectionModal({ isOpen, onClose, onAvatarSelected
                         e.target.src = '/assets/avatars/default-avatar.svg';
                       }}
                     />
-                    {selectedAvatar === avatar && (
-                      <div className="text-center text-violet-400 text-sm font-bold mt-2">✓ Selected</div>
-                    )}
                   </motion.div>
                 ))}
               </div>
@@ -252,7 +283,7 @@ export default function AvatarSelectionModal({ isOpen, onClose, onAvatarSelected
           )}
 
           {/* Buttons */}
-          <div className="flex gap-4 justify-center">
+          <div className="flex gap-4 justify-center m-6">
             <motion.button
               onClick={onClose}
               className="px-6 py-2 rounded-lg bg-gray-600 hover:bg-gray-500 text-white font-semibold"

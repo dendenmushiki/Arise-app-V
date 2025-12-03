@@ -89,7 +89,7 @@ export default function Dashboard() {
   const { level, progress } = xpToLevel(xp);
 
   return (
-    <div className="h-screen bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white px-4 mt-6">
+    <div className="h-screen bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white px-4 m-6">
       <QuestNotif />
 
       {/* Milestone Unlock Notification */}
@@ -303,7 +303,7 @@ export default function Dashboard() {
             return (
             <motion.div
               key={idx}
-              className="card p-6 text-center bg-[#12141f] border border-violet-700 rounded-xl shadow-md hover:bg-violet-500 hover:text-white transition-all duration-300"
+              className="card mb-6 p-6 text-center bg-[#12141f] border border-violet-700 rounded-xl shadow-md hover:bg-violet-500 hover:text-white transition-all duration-300"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >

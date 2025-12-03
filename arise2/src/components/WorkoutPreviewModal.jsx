@@ -134,17 +134,44 @@ export default function WorkoutPreviewModal() {
           setIsOpen(false);
           // Log challenge completion to the Recent list
           try {
-            await api.post("/workouts", {
+            const res = await api.post("/workouts", {
               name: cat?.label || 'Challenge',
               sets: 0,
               reps: 0,
               duration: 0,
               type: 'challenge',
             });
+
+            // Extract XP from response
+            const raw = (res?.data?.workout || res?.data) || res;
+            const gainedXpCandidate =
+              raw?.xp_gained ||
+              raw?.xpGained ||
+              raw?.xp ||
+              raw?.xpEarned ||
+              raw?.xp_gain ||
+              raw?.xpGain ||
+              0;
+
+            const hasXpFromServer = !!(
+              raw?.xp_gained || raw?.xpGained || raw?.xp || raw?.xpEarned || raw?.xp_gain || raw?.xpGain
+            );
+
+            let finalXp = Number(gainedXpCandidate) || 0;
+            if (!hasXpFromServer) {
+              // Fallback: small XP reward for completing a challenge
+              finalXp = Math.max(5, Math.round(Math.random() * 15));
+            }
+
             window.dispatchEvent(new CustomEvent('activityLogged'));
             
-            // Refetch profile to get updated unspent_stat_points
-            await api.get('/profile');
+            // Dispatch challenge completion event with XP
+            window.dispatchEvent(new CustomEvent('challengeCompleted', {
+              detail: {
+                xp: finalXp,
+                isFromServer: hasXpFromServer
+              }
+            }));
             
             // Show stat point earned notification
             setStatNotif('+1 Stat Point Earned!');

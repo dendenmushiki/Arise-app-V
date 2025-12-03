@@ -23,6 +23,9 @@ export default function Workout() {
   const [showStartModal, setShowStartModal] = useState(false);
   const [workoutInProgress, setWorkoutInProgress] = useState(false);
   const [currentWorkoutName, setCurrentWorkoutName] = useState("");
+  const [showCompleteMsg, setShowCompleteMsg] = useState(false);
+  const [xpGained, setXpGained] = useState(0);
+  const [xpFromServer, setXpFromServer] = useState(false);
 
   function Toast({ message, type = "success" }) {
     const bgColor = type === "success" ? "bg-gradient-to-r from-violet-500 to-violet-400" : "bg-red-600";
@@ -91,7 +94,18 @@ export default function Workout() {
 
   async function handleModalComplete(sessionData) {
     setShowStartModal(false);
-    await logWorkoutToBackend(false);
+    // Wait for server to log workout and return XP, then show completion modal
+    try {
+      const gained = await logWorkoutToBackend(false);
+      setXpGained(gained || 0);
+      setShowCompleteMsg(true);
+      setTimeout(() => setShowCompleteMsg(false), 5000);
+    } catch (err) {
+      console.error("Error logging workout on completion:", err);
+      // Fallback: still show modal but XP may be 0
+      setShowCompleteMsg(true);
+      setTimeout(() => setShowCompleteMsg(false), 5000);
+    }
   }
 
   function handleModalCancel(sessionData) {
@@ -134,6 +148,35 @@ export default function Workout() {
       setDuration(0);
       setWorkoutInProgress(false);
 
+      // (debug removed)
+
+      // Extract XP gained from response (support multiple possible field names)
+      const gainedXpCandidate =
+        raw?.xp_gained ||
+        raw?.xpGained ||
+        raw?.xp ||
+        raw?.xpEarned ||
+        raw?.xp_gain ||
+        raw?.xpGain ||
+        0;
+
+      const hasXpFromServer = !!(
+        raw?.xp_gained || raw?.xpGained || raw?.xp || raw?.xpEarned || raw?.xp_gain || raw?.xpGain
+      );
+
+      let finalXp = Number(gainedXpCandidate) || 0;
+      if (!hasXpFromServer) {
+        // Fallback estimator: duration (1 XP per minute) + sets*reps*0.2
+        const setsNum = Number(raw?.sets ?? sets ?? 0) || 0;
+        const repsNum = Number(raw?.reps ?? reps ?? 0) || 0;
+        const durationNum = Number(raw?.duration ?? duration ?? 0) || 0;
+        const estimated = Math.max(1, Math.round(durationNum * 1 + setsNum * repsNum * 0.2));
+        finalXp = estimated;
+      }
+
+      setXpGained(finalXp);
+      setXpFromServer(hasXpFromServer);
+
       try {
         const profileRes = await api.get("/profile");
         setAuth(token, profileRes.data.user);
@@ -142,12 +185,14 @@ export default function Workout() {
       }
 
       setTimeout(() => setToast(null), 3000);
+      return finalXp || 0;
     } catch (e) {
       console.error(e);
       const errMsg = e?.response?.data?.error || "Failed to log workout";
       setError(errMsg);
       setToast({ message: errMsg, type: "error" });
       setWorkoutInProgress(false);
+      return 0;
     }
   }
 
@@ -214,6 +259,8 @@ export default function Workout() {
         </motion.h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <motion.input
+            name="workoutName"
+            id="workoutName"
             value={name}
             onChange={(e) => {
               setName(e.target.value);
@@ -235,6 +282,8 @@ export default function Workout() {
           >
             <input
               type="number"
+              name="sets"
+              id="sets"
               value={sets}
               onChange={(e) => setSets(e.target.value)}
               placeholder="Sets"
@@ -243,6 +292,8 @@ export default function Workout() {
             />
             <input
               type="number"
+              name="reps"
+              id="reps"
               value={reps}
               onChange={(e) => setReps(e.target.value)}
               placeholder="Reps"
@@ -251,6 +302,8 @@ export default function Workout() {
             />
             <input
               type="number"
+              name="duration"
+              id="duration"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               placeholder="Duration (min)"
@@ -355,6 +408,79 @@ export default function Workout() {
       />
 
       {toast && <Toast message={toast.message} type={toast.type} />}
+
+      {/* Completion Message */}
+      {showCompleteMsg && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div
+            className="bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] border-2 border-violet-700 rounded-lg p-8 max-w-md w-full text-center"
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.85, opacity: 0 }}
+            transition={{ duration: 0.4, type: 'spring' }}
+          >
+            {/* Celebration emoji */}
+            <motion.div
+              animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 0.8, repeat: Infinity }}
+              className="text-6xl mb-4"
+            >
+              🎉
+            </motion.div>
+
+            {/* Main message */}
+            <motion.h2
+              className="quest-title text-3xl bg-gradient-to-r from-neon-cyan via-blue-400 to-violet-400 bg-clip-text text-transparent"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              Quest Complete!
+            </motion.h2>
+
+            {/* Subtitle */}
+            <motion.p
+              className="text-violet-300 mt-4 text-lg font-semibold"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              Workout finished successfully!
+            </motion.p>
+
+            {/* XP Gained */}
+            {xpGained > 0 && (
+              <motion.div
+                className="mt-6 p-4 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-lg border border-yellow-500/30"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5, duration: 0.4 }}
+              >
+                <div className="text-sm text-yellow-300 mb-1">{xpFromServer ? 'Experience Gained' : 'Estimated Experience'}</div>
+                <div className="text-3xl font-bold text-yellow-400">+{xpGained} XP</div>
+              </motion.div>
+            )}
+
+            {/* Close button */}
+            <div className="mt-6 flex justify-center">
+              <motion.button
+                onClick={() => setShowCompleteMsg(false)}
+                className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-semibold"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Close
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }
