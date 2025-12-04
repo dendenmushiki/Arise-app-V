@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import api, { setAuthToken } from "../api";
 import { useNavigate, Link } from "react-router-dom";
 import { useStore } from "../store";
+import LightPillar from "../components/LightPillar";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,10 +31,25 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white p-6 relative overflow-hidden">
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+        <LightPillar
+          topColor="#5227FF"
+          bottomColor="#FF9FFC"
+          intensity={1.0}
+          rotationSpeed={0.3}
+          glowAmount={0.005}
+          pillarWidth={3.0}
+          pillarHeight={0.4}
+          noiseIntensity={0.5}
+          pillarRotation={0}
+          interactive={false}
+          mixBlendMode="screen"
+        />
+      </div>
       <motion.form
         onSubmit={submit}
-        className="card p-8 w-96 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-lg animate-fade-in"
+        className="card p-8 w-96 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-lg animate-fade-in relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -42,7 +58,7 @@ export default function Login() {
             <img
               src="/assets/arise-logo.png"
               alt="Arise Logo"
-              className="w-25N h-25 object-contain rounded-md mb-2"
+              className="w-25 h-20 object-contain rounded-md mb-2"
             />
 
             <motion.h2

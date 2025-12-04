@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import AwakeningAssessmentModal from '../components/AwakeningAssessmentModal';
 import { useStore } from '../store';
 import { setAuthToken } from '../api';
+import LightPillar from "../components/LightPillar";
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -44,6 +45,7 @@ export default function Register() {
 
   async function handleSignup(e) {
     e.preventDefault();
+
     const userErr = validateUsername(username);
     const passErr = validatePassword(password);
 
@@ -59,11 +61,10 @@ export default function Register() {
         username,
         password
       });
+
       setSuccess('Registration successful! Starting awakening assessment...');
-      // Persist user/token to localStorage
       localStorage.setItem('user', JSON.stringify(res.data));
 
-      // Set auth in global store so Protected routes work
       const setAuth = useStore.getState().setAuth;
       try {
         if (res.data && res.data.token) {
@@ -71,7 +72,6 @@ export default function Register() {
           setAuthToken(res.data.token);
         }
       } catch (e) {
-        // non-fatal
         console.warn('Failed to set auth in store', e);
       }
 
@@ -86,8 +86,7 @@ export default function Register() {
     setShowAwakening(false);
     setUsername('');
     setPassword('');
-    
-    // Save the stats to localStorage and Zustand store
+
     if (attributes) {
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       const updatedUser = {
@@ -97,8 +96,7 @@ export default function Register() {
         rank: attributes.rank || 'D',
       };
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      // Update store with new user data
+
       const updateUser = useStore.getState().updateUser;
       try {
         updateUser({
@@ -110,29 +108,51 @@ export default function Register() {
         console.warn('Failed to update store:', e);
       }
     }
-    
+
     setTimeout(() => navigate('/dashboard'), 1000);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white p-6 relative overflow-hidden">
+      
+      {/* Background Light Pillar */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        <LightPillar
+          topColor="#5227FF"
+          bottomColor="#FF9FFC"
+          intensity={1.0}
+          rotationSpeed={0.3}
+          glowAmount={0.005}
+          pillarWidth={3.0}
+          pillarHeight={0.4}
+          noiseIntensity={0.5}
+          pillarRotation={0}
+          interactive={false}
+          mixBlendMode="screen"
+        />
+      </div>
+
+      {/* Awakening Modal */}
       <AwakeningAssessmentModal
         isOpen={showAwakening}
         userId={newUserId}
         onComplete={handleAwakeningComplete}
       />
 
+      {/* CARD CONTAINER */}
       <motion.div
-        className="card p-8 w-96 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-lg animate-fade-in"
+        className="card p-8 w-96 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-lg animate-fade-in relative z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
+        
+        {/* LOGO + TITLE */}
         <div className="flex flex-col items-center">
           <img
             src="/assets/arise-logo.png"
             alt="Arise Logo"
-            className="w-25 h-25 object-contain rounded-md mb-2"
+            className="w-25 h-20 object-contain rounded-md mb-2"
           />
 
           <motion.h2
@@ -145,87 +165,105 @@ export default function Register() {
           </motion.h2>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <label className="block text-sm mb-2 font-semibold text-white">Username</label>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full p-3 mb-2 rounded-lg bg-[#12141f] border border-violet-700 focus:border-violet-500 text-white placeholder:text-gray-400 transition-all duration-300"
-              required
-            />
-            {usernameError && <p className="text-red-400 text-sm mt-1">{usernameError}</p>}
-          </motion.div>
+        {/* FORM WRAPPER */}
+        <div
+          className="border border-transparent rounded-xl p-6"
+          style={{ boxShadow: '0 16px 48px 0 rgba(0,0,0,0.85)' }}
+        >
 
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <label className="block text-sm mb-2 font-semibold text-white">Password</label>
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full p-3 rounded-lg bg-[#12141f] border border-violet-700 focus:border-violet-500 text-white placeholder:text-gray-400 transition-all duration-300"
-              required
-            />
-            {passwordError && <p className="text-red-400 text-sm mt-1">{passwordError}</p>}
-          </motion.div>
+          <form onSubmit={handleSignup} className="space-y-4">
 
-          {error && (
-            <motion.p
-              className="text-red-400 text-center"
+            {/* USERNAME */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full p-3 mb-2 rounded-xl bg-[#12141f] border border-violet-700 focus:border-violet-500 text-white placeholder:text-gray-400 transition-all duration-300"
+                required
+              />
+              {usernameError && (
+                <p className="text-red-400 text-sm mt-1">{usernameError}</p>
+              )}
+            </motion.div>
+
+            {/* PASSWORD */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-3 rounded-xl bg-[#12141f] border border-violet-700 focus:border-violet-500 text-white placeholder:text-gray-400 transition-all duration-300"
+                required
+              />
+              {passwordError && (
+                <p className="text-red-400 text-sm mt-1">{passwordError}</p>
+              )}
+            </motion.div>
+
+            {/* ERROR */}
+            {error && (
+              <motion.p
+                className="text-red-400 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {error}
+              </motion.p>
+            )}
+
+            {/* SUCCESS */}
+            {success && (
+              <motion.p
+                className="text-green-400 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                {success}
+              </motion.p>
+            )}
+
+            {/* SUBMIT BUTTON */}
+            <motion.button
+              type="submit"
+              className="w-full p-3 rounded-xl bg-violet-700 text-white font-bold hover:bg-violet-500 transition-all duration-300 shadow-md"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
             >
-              {error}
-            </motion.p>
-          )}
-          {success && (
-            <motion.p
-              className="text-green-400 text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              {success}
-            </motion.p>
-          )}
+              SIGN UP
+            </motion.button>
+          </form>
 
-          <motion.button
-            type="submit"
-            className="w-full p-3 rounded-xl bg-violet-700 text-white font-bold hover:bg-violet-500 hover:text-white transition-all duration-300 shadow-md"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          {/* LOGIN LINK */}
+          <motion.p
+            className="mt-6 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.6 }}
           >
-            SIGN UP
-          </motion.button>
-        </form>
+            <span className="text-white">Already have an account? </span>
+            <Link
+              to="/"
+              className="text-violet-400 hover:text-violet-300 transition-colors duration-300 font-semibold"
+            >
+              Log in
+            </Link>
+          </motion.p>
 
-        <motion.p
-          className="mt-6 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-        >
-          <span className="text-white">Already have an account? </span>
-          <Link
-            to="/"
-            className="text-violet-400 hover:text-violet-300 transition-colors duration-300 font-semibold"
-          >
-            Log in
-          </Link>
-        </motion.p>
+        </div>
       </motion.div>
     </div>
   );
