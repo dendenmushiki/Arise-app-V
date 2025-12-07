@@ -9,10 +9,12 @@ export default function WorkoutPreviewModal() {
   const [cat, setCat] = useState(null);
   const [showStart, setShowStart] = useState(false);
   const [statNotif, setStatNotif] = useState(null);
+  const [difficulty, setDifficulty] = useState('beginner');
 
   useEffect(() => {
     const handler = (e) => {
       setCat(e.detail);
+      setDifficulty('beginner');
       setIsOpen(true);
     };
     window.addEventListener('openWorkoutPreview', handler);
@@ -76,11 +78,55 @@ export default function WorkoutPreviewModal() {
                   </div>
 
                   <div className="mt-4 text-gray-300">
-                    <p className="font-semibold mb-1">What to do</p>
-                    <p className="text-sm">Perform the listed bodyweight moves focusing on control and full range of motion. Scale intensity by reps/tempo.</p>
+                    <div className="flex items-center justify-start gap-4">
+                      <p className="font-semibold">Difficulty</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setDifficulty('beginner')}
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${difficulty === 'beginner' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-300'}`}
+                        >
+                          Beginner
+                        </button>
+                        <button
+                          onClick={() => setDifficulty('intermediate')}
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${difficulty === 'intermediate' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-300'}`}
+                        >
+                          Intermediate
+                        </button>
+                        <button
+                          onClick={() => setDifficulty('hard')}
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${difficulty === 'hard' ? 'bg-violet-600 text-white' : 'bg-gray-800 text-gray-300'}`}
+                        >
+                          Hard
+                        </button>
+                      </div>
+                    </div>
 
-                    <p className="font-semibold mt-4 mb-1">Expected effect</p>
-                    <p className="text-sm">Improved strength, endurance, and mobility. Small XP reward on completion.</p>
+                    <div className="mt-3">
+                      <p className="font-semibold mb-1">Exercises</p>
+                      {cat?.workout && cat.workout[difficulty] ? (
+                        <ul className="list-disc list-inside text-sm text-gray-200">
+                          {cat.workout[difficulty].map((ex, i) => (
+                            <li key={i} className="py-0.5">{ex}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-400">No exercise list available for this category.</p>
+                      )}
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="font-semibold mb-1">Expected effect</p>
+                      {cat?.workout && cat.workout.effects ? (
+                        <ul className="list-disc list-inside text-sm text-gray-200">
+                          {cat.workout.effects.map((ef, i) => (
+                            <li key={i} className="py-0.5">{ef}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-400">Improved strength, endurance, and mobility.</p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Action buttons */}
