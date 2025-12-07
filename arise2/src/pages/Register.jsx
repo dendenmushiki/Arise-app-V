@@ -113,8 +113,12 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white p-6 relative overflow-hidden">
-      
+    <div
+      className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
+      style={{
+        background: "linear-gradient(to bottom right, #0b0d1c, #0a0b16)",
+      }}
+    >
       {/* Background Light Pillar */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
         <LightPillar
@@ -132,6 +136,16 @@ export default function Register() {
         />
       </div>
 
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 opacity-5"
+        style={{
+          backgroundImage: `linear-gradient(rgba(82, 39, 255, 0.3) 1px, transparent 1px),
+                           linear-gradient(90deg, rgba(82, 39, 255, 0.3) 1px, transparent 1px)`,
+          backgroundSize: "50px 50px",
+        }}
+      />
+
       {/* Awakening Modal */}
       <AwakeningAssessmentModal
         isOpen={showAwakening}
@@ -140,131 +154,124 @@ export default function Register() {
       />
 
       {/* CARD CONTAINER */}
-      <motion.div
-        className="card p-8 w-96 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-lg animate-fade-in relative z-10"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      <motion.form
+        onSubmit={handleSignup}
+        className="relative z-10 w-full max-w-md p-8 rounded-2xl border shadow-2xl backdrop-blur-xl"
+        style={{
+          background: "rgba(13, 14, 38, 0.6)",
+          borderColor: "rgba(138, 43, 226, 0.5)",
+          boxShadow: "0 0 40px rgba(82, 39, 255, 0.2), 0 16px 48px rgba(0,0,0,0.85)",
+        }}
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
       >
-        
         {/* LOGO + TITLE */}
-        <div className="flex flex-col items-center">
-          <img
+        <motion.div
+          className="flex flex-col items-center mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          <motion.img
             src="/assets/arise-logo.png"
             alt="Arise Logo"
-            className="w-25 h-20 object-contain rounded-md mb-2"
+            className="w-30 h-30 object-contain mb-4"
+            animate={{ y: [0, -5, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           />
-
-          <motion.h2
-            className="text-3xl mb-6 text-center font-heading text-white"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
+          <h1
+            className="text-3xl font-bold tracking-wider"
+            style={{
+              fontFamily: "'Orbitron', sans-serif",
+              background: "linear-gradient(to right, #5227FF, #FF9FFC)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
           >
             SIGN UP
-          </motion.h2>
-        </div>
+          </h1>
+          <p className="text-gray-400 text-sm mt-2">Create your account to begin</p>
+        </motion.div>
 
-        {/* FORM WRAPPER */}
-        <div
-          className="border border-transparent rounded-xl p-6"
-          style={{ boxShadow: '0 16px 48px 0 rgba(0,0,0,0.85)' }}
+        {/* USERNAME */}
+        <motion.div className="mb-4" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full p-3 rounded-xl text-white placeholder:text-gray-400 transition-all duration-300 focus:outline-none"
+            style={{ background: "#12141f", border: "1px solid #7c3aed" }}
+            onFocus={(e) => (e.target.style.borderColor = "#8b5cf6")}
+            onBlur={(e) => (e.target.style.borderColor = "#7c3aed")}
+            required
+          />
+          {usernameError && (
+            <p className="text-red-400 text-sm mt-1">{usernameError}</p>
+          )}
+        </motion.div>
+
+        {/* PASSWORD */}
+        <motion.div className="mb-6" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-3 rounded-xl text-white placeholder:text-gray-400 transition-all duration-300 focus:outline-none"
+            style={{ background: "#12141f", border: "1px solid #7c3aed" }}
+            onFocus={(e) => (e.target.style.borderColor = "#8b5cf6")}
+            onBlur={(e) => (e.target.style.borderColor = "#7c3aed")}
+            required
+          />
+          {passwordError && (
+            <p className="text-red-400 text-sm mt-1">{passwordError}</p>
+          )}
+        </motion.div>
+
+        {/* ERROR */}
+        {error && (
+          <motion.p className="text-red-400 mb-4 text-center text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            {error}
+          </motion.p>
+        )}
+
+        {/* SUCCESS */}
+        {success && (
+          <motion.p className="text-green-400 mb-4 text-center text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            {success}
+          </motion.p>
+        )}
+
+        {/* SUBMIT BUTTON */}
+        <motion.button
+          type="submit"
+          className="w-full p-3 rounded-xl text-white font-bold transition-all duration-300 shadow-md mb-4"
+          style={{ background: "#7c3aed" }}
+          whileHover={{ scale: 1.03, background: "#8b5cf6", boxShadow: "0 0 30px rgba(82, 39, 255, 0.5)" }}
+          whileTap={{ scale: 0.97 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
         >
+          SIGN UP
+        </motion.button>
 
-          <form onSubmit={handleSignup} className="space-y-4">
-
-            {/* USERNAME */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full p-3 mb-2 rounded-xl bg-[#12141f] border border-violet-700 focus:border-violet-500 text-white placeholder:text-gray-400 transition-all duration-300"
-                required
-              />
-              {usernameError && (
-                <p className="text-red-400 text-sm mt-1">{usernameError}</p>
-              )}
-            </motion.div>
-
-            {/* PASSWORD */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 rounded-xl bg-[#12141f] border border-violet-700 focus:border-violet-500 text-white placeholder:text-gray-400 transition-all duration-300"
-                required
-              />
-              {passwordError && (
-                <p className="text-red-400 text-sm mt-1">{passwordError}</p>
-              )}
-            </motion.div>
-
-            {/* ERROR */}
-            {error && (
-              <motion.p
-                className="text-red-400 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {error}
-              </motion.p>
-            )}
-
-            {/* SUCCESS */}
-            {success && (
-              <motion.p
-                className="text-green-400 text-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {success}
-              </motion.p>
-            )}
-
-            {/* SUBMIT BUTTON */}
-            <motion.button
-              type="submit"
-              className="w-full p-3 rounded-xl bg-violet-700 text-white font-bold hover:bg-violet-500 transition-all duration-300 shadow-md"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-            >
-              SIGN UP
-            </motion.button>
-          </form>
-
-          {/* LOGIN LINK */}
-          <motion.p
-            className="mt-6 text-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            <span className="text-white">Already have an account? </span>
-            <Link
-              to="/"
-              className="text-violet-400 hover:text-violet-300 transition-colors duration-300 font-semibold"
-            >
+        {/* LOGIN LINK */}
+        <motion.div className="mt-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+          <p className="text-white text-sm">
+            Already have an account? {" "}
+            <Link to="/" className="font-semibold transition-colors duration-300" style={{ color: "#a78bfa" }}>
               Log in
             </Link>
-          </motion.p>
+          </p>
+        </motion.div>
 
-        </div>
-      </motion.div>
+        {/* Decorative corner accents */}
+        <div className="absolute top-0 left-0 w-16 h-16 rounded-tl-2xl pointer-events-none" style={{ borderLeft: "2px solid rgba(82, 39, 255, 0.3)", borderTop: "2px solid rgba(82, 39, 255, 0.3)" }} />
+        <div className="absolute bottom-0 right-0 w-16 h-16 rounded-br-2xl pointer-events-none" style={{ borderRight: "2px solid rgba(255, 159, 252, 0.3)", borderBottom: "2px solid rgba(255, 159, 252, 0.3)" }} />
+      </motion.form>
     </div>
   );
 }
