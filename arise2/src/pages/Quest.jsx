@@ -109,6 +109,7 @@ export default function Quest() {
   const [xpGained, setXpGained] = useState(0);
   const [xpFromServer, setXpFromServer] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
+  const [questCompletedToday, setQuestCompletedToday] = useState(false); // Track if quest already completed today
 
   useEffect(() => {
     if (!token || !user) navigate("/");
@@ -141,12 +142,15 @@ export default function Quest() {
       if (res.data?.restDay) {
         setQuest(null);
         setIsRestDay(true);
+        setQuestCompletedToday(false);
         const nextUnlock = res.data.nextUnlock || getTomorrowMidnight();
         startCountdown(nextUnlock);
       } else {
         const q = res.data.quest || res.data;
         setIsRestDay(false);
         setQuest(q);
+        // Check if quest was already completed today
+        setQuestCompletedToday(q?.completedToday === true || q?.completed === true || false);
         setForm({
           title: q?.title || "",
           description: q?.description || "",
@@ -247,6 +251,7 @@ export default function Quest() {
       const res = await api.post(`/quests/complete/${user.id}`, { questId: quest.id });
       const raw = res?.data || res;
       setCompleteMsg(raw.message || res.data?.message || "Quest complete!");
+      setQuestCompletedToday(true); // Disable quest for the rest of the day
 
       // Extract XP if present, support multiple field names
       const gainedXpCandidate = raw?.xp_gained || raw?.xpGained || raw?.xp || raw?.xpEarned || raw?.xp_gain || raw?.xpGain || 0;
@@ -452,16 +457,22 @@ export default function Quest() {
 
                     {!completeMsg && (
                       <motion.div className="flex gap-3 flex-wrap mt-3">
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={handleOpenStartModal}
-                          disabled={questInProgress || !quest}
-                          className="px-4 py-2 rounded font-semibold hover:shadow-glow-cyan transition-all duration-300 animate-glow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                          <Play size={18} strokeWidth={2} />
-                          START QUEST
-                        </motion.button>
+                        {questCompletedToday ? (
+                          <div className="text-sm text-gray-400 p-3 rounded bg-gray-800 border border-gray-700">
+                            ✓ Quest completed today. Return tomorrow for a new quest!
+                          </div>
+                        ) : (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleOpenStartModal}
+                            disabled={questInProgress || !quest}
+                            className="px-4 py-2 rounded font-semibold hover:shadow-glow-cyan transition-all duration-300 animate-glow disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                          >
+                            <Play size={18} strokeWidth={2} />
+                            START QUEST
+                          </motion.button>
+                        )}
                         <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}

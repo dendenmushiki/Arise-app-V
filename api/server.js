@@ -612,11 +612,25 @@ app.post("/api/workouts", authMiddleware, (req, res) => {
         if (xpErr) console.error('Failed to add workout XP:', xpErr.message);
       });
 
-      // Award 1 stat point on challenge completion
+      // Award 1 stat point for every 5 challenges completed
       if (type === 'challenge') {
-        db.run(`UPDATE users SET unspent_stat_points = unspent_stat_points + 1 WHERE id = ?`, [uid], (statErr) => {
-          if (statErr) console.error('Failed to award challenge stat point:', statErr.message);
-        });
+        db.get(
+          `SELECT COUNT(*) as challenge_count FROM workouts WHERE userId = ? AND type = 'challenge'`,
+          [uid],
+          (countErr, row) => {
+            if (countErr) {
+              console.error('Failed to count challenges:', countErr.message);
+              return;
+            }
+            // Award 1 stat point when total challenges completed is a multiple of 5
+            const totalChallenges = (row?.challenge_count || 0) + 1; // +1 for the current challenge
+            if (totalChallenges % 5 === 0) {
+              db.run(`UPDATE users SET unspent_stat_points = unspent_stat_points + 1 WHERE id = ?`, [uid], (statErr) => {
+                if (statErr) console.error('Failed to award challenge stat point:', statErr.message);
+              });
+            }
+          }
+        );
       }
 
       res.json({ id: this.lastID, name, sets, reps, duration, loggedOnly: loggedOnly ? 1 : 0, type });
@@ -982,6 +996,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
                   instructions: poolQuest.instructions,
                   mediaType: poolQuest.mediaType,
                   mediaUrl: poolQuest.mediaUrl,
+                  completedToday: false, // New quest, not completed yet
                 });
 
                 res.json({ quest: responseQuest, nextUnlock: tomorrow.getTime() });
@@ -1003,6 +1018,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
           instructions: poolQuest.instructions,
           mediaType: poolQuest.mediaType,
           mediaUrl: poolQuest.mediaUrl,
+          completedToday: row?.completed === 1 || row?.completed === true, // Check if already completed
         });
 
         res.json({ quest: responseQuest, nextUnlock: tomorrow.getTime() });
