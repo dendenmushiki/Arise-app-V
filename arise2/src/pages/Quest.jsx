@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import LevelProgress from "../components/LevelProgress.jsx";
 import { xpToLevel } from "../utils/xp.js";
-import { Clock, Play, X, Lightbulb, Edit } from 'lucide-react';
+import { Clock, Play, X, Lightbulb, Edit, CheckCircle2, Circle } from 'lucide-react';
 import { WorkoutStartModal } from "../components/WorkoutStartModal.jsx";
 
 function formatTime(ms) {
@@ -17,6 +17,60 @@ function formatTime(ms) {
   if (hours > 0) return `${hours}h ${mins}m ${String(secs).padStart(2, "0")}s`;
   if (mins > 0) return `${mins}m ${String(secs).padStart(2, "0")}s`;
   return `${secs}s`;
+}
+
+function getWorkoutSteps(questTitle) {
+  const stepsMap = {
+    "Morning Run": [
+      "Warm up with light walking for 3-5 minutes",
+      "Begin running at an easy, conversational pace",
+      "Maintain steady breathing throughout",
+      "Monitor your heart rate - should feel sustainable",
+      "Cool down with 2-3 minutes of walking",
+      "Stretch major muscle groups (calves, hamstrings, quads, hip flexors)"
+    ],
+    "Strength Training": [
+      "Perform bodyweight squats or weighted squats - 3 sets",
+      "Do push-ups or bench press - 3 sets",
+      "Perform rows (barbell or dumbbell) - 3 sets",
+      "Rest 60-90 seconds between sets",
+      "Focus on proper form over speed",
+      "Cool down with light stretching"
+    ],
+    "Cardio Blast": [
+      "Warm up with 2 minutes of easy movement",
+      "Sprint or hard effort for 1 minute",
+      "Easy recovery pace for 1 minute",
+      "Alternate hard and easy efforts repeatedly",
+      "Maintain high intensity during hard intervals",
+      "Cool down with gradual pace reduction"
+    ],
+    "Flexibility & Stretch": [
+      "Start with neck rolls - 10 each direction",
+      "Shoulder stretches - hold 30-45 seconds each",
+      "Forward fold hamstring stretch - 45 seconds",
+      "Quad stretch - 30 seconds each leg",
+      "Hip flexor lunge stretch - 45 seconds each side",
+      "Child's pose - hold 1 minute to finish"
+    ],
+    "HIIT Workout": [
+      "Warm up with 2 minutes of light cardio",
+      "Perform 20 seconds of maximum effort exercise",
+      "Rest for 40 seconds at easy pace",
+      "Repeat intervals for the duration",
+      "Scale exercises as needed (sprints, burpees, jumping jacks)",
+      "Cool down and catch your breath for 2-3 minutes"
+    ]
+  };
+
+  return stepsMap[questTitle] || [
+    "Follow the instructions provided",
+    "Maintain proper form throughout",
+    "Stay hydrated and focused",
+    "Track your performance",
+    "Stretch and cool down after",
+    "Rest and recover"
+  ];
 }
 
 function Toast({ message, type = "success" }) {
@@ -54,6 +108,7 @@ export default function Quest() {
   const [questInProgress, setQuestInProgress] = useState(false);
   const [xpGained, setXpGained] = useState(0);
   const [xpFromServer, setXpFromServer] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState([]);
 
   useEffect(() => {
     if (!token || !user) navigate("/");
@@ -248,7 +303,9 @@ export default function Quest() {
   if (!quest && !isRestDay) return <div className="min-h-screen p-6 bg-gradient-to-br from-dark-navy to-dark-bg text-white">No quest found.</div>;
 
   const xp = quest?.xp ?? user?.xp ?? 0;
-  const levelInfo = xpToLevel(xp);
+  const questLevel = quest?.level ?? user?.level ?? 1;
+  // Pass xp remainder and level to xpToLevel for linear formula calculation
+  const levelInfo = xpToLevel(xp, questLevel);
   const level = levelInfo.level;
   const progress = levelInfo.progress;
 
@@ -338,6 +395,47 @@ export default function Quest() {
                       <div className="text-xs text-gray-400">Expected effect: {`Improved ${quest.title.toLowerCase()} + small XP reward.`}</div>
                     </div>
 
+                    {/* Workout Steps */}
+                    <motion.div className="mb-4 p-4 bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded border border-blue-600/50">
+                      <div className="font-semibold mb-3 flex items-center gap-2 text-blue-300">
+                        <span>💪 Workout Steps</span>
+                      </div>
+                      <div className="space-y-2">
+                        {getWorkoutSteps(quest.title).map((step, idx) => (
+                          <motion.div
+                            key={idx}
+                            className="flex items-start gap-3 cursor-pointer group"
+                            onClick={() => {
+                              setCompletedSteps(prev => 
+                                prev.includes(idx) 
+                                  ? prev.filter(i => i !== idx)
+                                  : [...prev, idx]
+                              );
+                            }}
+                            whileHover={{ x: 4 }}
+                          >
+                            <motion.div
+                              className="flex-shrink-0 mt-1"
+                              animate={{ scale: completedSteps.includes(idx) ? [1, 1.2, 1] : 1 }}
+                              transition={{ duration: 0.3 }}
+                            >
+                              {completedSteps.includes(idx) ? (
+                                <CheckCircle2 size={20} className="text-green-400" />
+                              ) : (
+                                <Circle size={20} className="text-gray-500 group-hover:text-blue-400 transition-colors" />
+                              )}
+                            </motion.div>
+                            <span className={`text-sm transition-all ${completedSteps.includes(idx) ? 'text-gray-400 line-through' : 'text-gray-200 group-hover:text-white'}`}>
+                              {step}
+                            </span>
+                          </motion.div>
+                        ))}
+                      </div>
+                      <div className="mt-3 text-xs text-blue-300 text-center">
+                        Progress: {completedSteps.length} / {getWorkoutSteps(quest.title).length} steps
+                      </div>
+                    </motion.div>
+
                     <motion.div className="mb-4 flex gap-3 flex-wrap">
                       <motion.div className="card px-3 py-2" whileHover={{ scale: 1.05 }}>💪 Reps: <span className="xp-text">{scaledReps}</span></motion.div>
                       <motion.div className="card px-3 py-2 flex items-center gap-2" whileHover={{ scale: 1.05 }}>
@@ -418,7 +516,7 @@ export default function Quest() {
 
                             {/* Main message */}
                             <motion.h2
-                              className="quest-title text-3xl h-20vh bg-gradient-to-r from-neon-cyan via-blue-400 to-violet-400 bg-clip-text text-transparent"
+                              className="quest-title text-3xl h-10vh bg-gradient-to-r from-neon-cyan via-blue-400 to-violet-400 bg-clip-text text-transparent"
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.2, duration: 0.5 }}

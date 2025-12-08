@@ -86,7 +86,9 @@ export default function Dashboard() {
   }
 
   const xp = profile?.xp ?? user?.xp ?? 0;
-  const { level, progress } = xpToLevel(xp);
+  const profileLevel = profile?.level ?? user?.level ?? 1;
+  // Pass xp remainder and level to xpToLevel for linear formula calculation
+  const { level, progress } = xpToLevel(xp, profileLevel);
 
   return (
     <div className="h-screen bg-gradient-to-br from-[#0b0d1c] to-[#0a0b16] text-white px-4 m-6">

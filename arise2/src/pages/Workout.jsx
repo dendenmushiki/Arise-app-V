@@ -12,9 +12,9 @@ export default function Workout() {
   const setAuth = useStore((s) => s.setAuth);
 
   const [name, setName] = useState("");
-  const [sets, setSets] = useState(0);
-  const [reps, setReps] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [sets, setSets] = useState("");
+  const [reps, setReps] = useState("");
+  const [duration, setDuration] = useState("");
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -112,6 +112,7 @@ export default function Workout() {
     setWorkoutInProgress(false);
     setShowStartModal(false);
     setToast({ message: "Workout cancelled - not logged", type: "error" });
+    setTimeout(() => setToast(null), 3000);
   }
 
   async function logWorkoutToBackend(loggedOnly = false) {
@@ -404,6 +405,7 @@ export default function Workout() {
         onCancel={handleModalCancel}
         workoutId={`${user?.id}-${Date.now()}`}
         type="workout"
+        initialDuration={duration}
         title={`Start ${currentWorkoutName || "Workout"}`}
       />
 

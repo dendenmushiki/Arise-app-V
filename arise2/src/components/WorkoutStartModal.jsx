@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronUp, Minus, X, Play, Clock } from "lucide-react";
+import { ChevronUp, Minus, X, Play, Clock, AlertCircle } from "lucide-react";
 
 const STORAGE_KEY = "activeWorkoutSession";
+const MIN_DURATION_MS = 30 * 60 * 1000; // 30 minutes minimum
 
 export const WorkoutStartModal = ({
   isOpen,
@@ -12,6 +13,8 @@ export const WorkoutStartModal = ({
   workoutId,
   type,
   title = type === "quest" ? "Start Daily Quest" : "Start Workout",
+  // initialDuration: minutes (number or numeric string). Only used to prefill when opening.
+  initialDuration = null,
 }) => {
   const [timeInput, setTimeInput] = useState("30"); 
   const [isStarted, setIsStarted] = useState(false);
@@ -27,6 +30,16 @@ export const WorkoutStartModal = ({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
+
+  // Update timeInput when modal opens and initialDuration changes, but only for workout type and if not started
+  useEffect(() => {
+    if (isOpen && type === "workout" && !isStarted && initialDuration != null) {
+      const mins = Number(initialDuration);
+      if (!isNaN(mins) && mins > 0) {
+        setTimeInput(String(mins));
+      }
+    }
+  }, [isOpen, initialDuration, type, isStarted]);
 
   const formatTimeDisplay = (ms) => {
     const totalSecs = Math.floor(ms / 1000);
@@ -81,7 +94,8 @@ export const WorkoutStartModal = ({
   const handleStart = () => {
     setError("");
     const durationMs = parseTimeInput(timeInput);
-    if (!durationMs || durationMs <= 0) return setError("Invalid time format. Use minutes or hh:mm:ss.");
+    if (!durationMs || durationMs <= 0) return setError("Invalid time format. Use minutes or hh:mm:ss. Minimum is 30 minutes.");
+    if (durationMs < MIN_DURATION_MS) return setError("Minimum duration is 30 minutes.");
     if (durationMs > 12 * 3600 * 1000) return setError("Maximum duration is 12 hours.");
 
     const session = {
@@ -242,7 +256,7 @@ export const WorkoutStartModal = ({
                       How long do you estimate this {type} will take?
                     </p>
                     <div className="mb-6">
-                      <label className="block text-sm text-gray-300 mb-2">Time (minutes or hh:mm:ss)</label>
+                      <label className="block text-sm text-gray-300 mb-2">Time (minutes or hh:mm:ss) — minimum 30 minutes</label>
                       <motion.input
                         type="text"
                         value={timeInput}

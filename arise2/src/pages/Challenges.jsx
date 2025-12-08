@@ -7,16 +7,80 @@ import { Dumbbell, Target, Heart, Zap, Sparkles, Flame } from 'lucide-react';
 import WorkoutPreviewModal from '../components/WorkoutPreviewModal.jsx';
 
 const CATEGORIES = [
-  { key: 'fullbody', label: 'Full Body', asset: '/assets/fullbody.svg', icon: Dumbbell, duration: '25 min' },
-  { key: 'abs', label: 'Abs', asset: '/assets/abs.svg', icon: Target, duration: '15 min' },
-  { key: 'chest', label: 'Chest', asset: '/assets/chest.svg', icon: Heart, duration: '20 min' },
-  { key: 'arms', label: 'Arms', asset: '/assets/arms.svg', icon: Zap, duration: '18 min' },
-  { key: 'legs', label: 'Legs', asset: '/assets/legs.svg', icon: Sparkles, duration: '30 min' },
-  { key: 'shoulders_back', label: 'Shoulders & Back', asset: '/assets/shoulders_back.svg', icon: Dumbbell, duration: '22 min' },
-  { key: 'butt', label: 'Butt', asset: '/assets/butt.svg', icon: Target, duration: '20 min' },
-  { key: 'stretching', label: 'Stretching', asset: '/assets/stretching.svg', icon: Heart, duration: '12 min' },
-  { key: 'fatburn', label: 'Fat Burn', asset: '/assets/fatburn.svg', icon: Flame, duration: '35 min' },
+  { key: 'fullbody', label: 'Full Body', asset: '/assets/fullbody.svg', icon: Dumbbell, duration: '25 min', wkKey: 'Fullbody' },
+  { key: 'abs', label: 'Abs', asset: '/assets/abs.svg', icon: Target, duration: '15 min', wkKey: 'Abs' },
+  { key: 'chest', label: 'Chest', asset: '/assets/chest.svg', icon: Heart, duration: '20 min', wkKey: 'Chest' },
+  { key: 'arms', label: 'Arms', asset: '/assets/arms.svg', icon: Zap, duration: '18 min', wkKey: 'Arms' },
+  { key: 'legs', label: 'Legs', asset: '/assets/legs.svg', icon: Sparkles, duration: '30 min', wkKey: 'Legs' },
+  { key: 'shoulders_back', label: 'Shoulders & Back', asset: '/assets/shoulders_back.svg', icon: Dumbbell, duration: '22 min', wkKey: 'ShoulderBack' },
+  { key: 'butt', label: 'Butt', asset: '/assets/butt.svg', icon: Target, duration: '20 min', wkKey: 'Butt' },
+  { key: 'stretching', label: 'Stretching', asset: '/assets/stretching.svg', icon: Heart, duration: '12 min', wkKey: 'Stretching' },
+  { key: 'fatburn', label: 'Fat Burn', asset: '/assets/fatburn.svg', icon: Flame, duration: '35 min', wkKey: 'FatBurn' },
 ];
+
+// Workout dataset (static)
+const workoutData = {
+  Fullbody: {
+    beginner: ["Jumping Jacks (30s)", "Squats (12)", "Knee Push-ups (10)", "Glute bridge (12)", "Plank (20s)"],
+    intermediate: ["Burpees (10)", "Push-ups (12)", "Lunges (12/leg)", "Mountain Climbers (30s)", "Plank (40s)"],
+    hard: ["Burpee Push-ups (12)", "Jump Squats (15)", "Decline Push-ups (12)", "Bulgarian Split Squat (12/leg)", "Plank Leg Lift (1 min)"],
+    effects: ["Improves cardiovascular endurance", "Enhances total-body strength", "Burns high calories", "Boosts metabolism"]
+  },
+  Abs: {
+    beginner: ["Crunches (12)", "Toe reaches (10)", "Heel touches (20)", "Plank (20s)"],
+    intermediate: ["Leg raises (12)", "Russian twists (30s)", "Bicycle crunches (20)", "Plank (45s)"],
+    hard: ["Hanging leg raises (12)", "V-ups (15)", "Hard Russian Twists (1 min)", "Plank (1 min+)"] ,
+    effects: ["Strengthens core", "Improves posture", "Reduces lower back strain"]
+  },
+  Legs: {
+    beginner: ["Squats (15)", "Glute bridges (15)", "Calf raises (20)", "Side leg raises (15/side)"],
+    intermediate: ["Reverse lunges (12/leg)", "Wall sit (40s)", "Sumo squats (15)", "Hip thrusts (15)"],
+    hard: ["Jump lunges (12/leg)", "Pistol squat progression (6/leg)", "Box jumps (15)", "Single-leg RDL (12/leg)"],
+    effects: ["Builds strength", "Improves balance", "Enhances leg endurance"]
+  },
+  Chest: {
+    beginner: ["Knee push-ups (12)", "Wall push-ups (15)", "Chest squeeze hold (30s)"],
+    intermediate: ["Push-ups (15)", "Incline push-ups (15)", "Wide push-ups (12)"],
+    hard: ["Decline push-ups (15)", "Diamond push-ups (12)", "Clap push-ups (8–10)"],
+    effects: ["Strengthens chest/triceps/shoulders", "Improves pushing strength"]
+  },
+  Back: {
+    beginner: ["Superman hold (20s)", "Reverse snow angels (12)", "Bird dogs (12/side)"],
+    intermediate: ["Superman reps (15)", "W-raises (15)", "Hip hinge (20)"],
+    hard: ["Arch-ups (20)", "Hard supermans (1 min)", "Towel rows (no equipment alt)"],
+    effects: ["Strengthens back muscles", "Improves posture", "Reduces back pain"]
+  },
+  Arms: {
+    beginner: ["Arm circles (20s)", "Bicep curls (12)", "Tricep dips (10)"],
+    intermediate: ["Bicep curls (15)", "Tricep kickbacks (12/arm)", "Pike push-ups (10)"],
+    hard: ["Pseudo planche leans (20s)", "Diamond push-ups (12)", "Archer push-ups (8/side)"],
+    effects: ["Builds arm strength", "Improves muscle tone", "Enhances upper body power"]
+  },
+  ShoulderBack: {
+    beginner: ["Shoulder rolls (15s)", "Band pull-aparts (12)", "Wall angels (12)"],
+    intermediate: ["Reverse fly (12)", "Pike push-ups (12)", "Scapular push-ups (10)"],
+    hard: ["Handstand hold (20s)", "Pseudo planche push-ups (8)", "Decline reverse fly (12)"],
+    effects: ["Strengthens shoulders", "Improves posture", "Enhances upper back"]
+  },
+  Butt: {
+    beginner: ["Glute bridges (15)", "Fire hydrants (12/side)", "Donkey kicks (12/leg)"],
+    intermediate: ["Bulgarian split squats (12/leg)", "Single-leg glute bridge (12/leg)", "Hip thrusts (15)"],
+    hard: ["Jump squats (15)", "Pistol squats (6/leg)", "Single-leg deadlifts (12/leg)"],
+    effects: ["Builds glute strength", "Improves hip stability", "Enhances lower body tone"]
+  },
+  Stretching: {
+    beginner: ["Cat-cow stretch (10 reps)", "Child's pose (30s)", "Hamstring stretch (30s/leg)"],
+    intermediate: ["Deep lunge stretch (45s/leg)", "Pigeon pose (45s/side)", "Spinal twist (30s/side)"],
+    hard: ["Full splits progression (1 min)", "Scorpion stretch (30s/side)", "Deep back bend (45s)"],
+    effects: ["Increases flexibility", "Reduces muscle tension", "Improves recovery"]
+  },
+  FatBurn: {
+    beginner: ["Jump rope (30s)", "High knees (30s)", "Marching (45s)"],
+    intermediate: ["Burpees (10)", "Jump squats (15)", "Mountain climbers (30s)", "Jumping jacks (30s)"],
+    hard: ["Burpee box jumps (10)", "Speed mountain climbers (45s)", "Jump rope double unders (20s)", "Fast burpees (12)"],
+    effects: ["Burns maximum calories", "Boosts metabolism", "Improves cardiovascular fitness"]
+  }
+};
 
 export default function Challenges() {
   const setAuth = useStore((s) => s.setAuth);
@@ -115,14 +179,14 @@ export default function Challenges() {
                   <button
                     type="button"
                     aria-label={`Choose ${cat.label} workout`}
-                    onClick={() => window.dispatchEvent(new CustomEvent('openWorkoutPreview', { detail: cat }))}
+                    onClick={() => window.dispatchEvent(new CustomEvent('openWorkoutPreview', { detail: { ...cat, workout: workoutData[cat.wkKey] || null } }))}
                     className="group relative w-full bg-[#12141f] border-2 border-violet-700 hover:border-violet-500 rounded-2xl shadow-lg hover:shadow-2xl overflow-hidden transition-all duration-300 cursor-pointer"
                   >
                     {/* Background gradient effect on hover */}
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                     {/* Icon section */}
-                    <div className="relative h-40 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center border-b border-violet-700/30">
+                    <div className="relative h-40 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center border-b border-violet-700/30 rounded-2xl mt-3">
                       <motion.div
                         className="text-violet-400"
                         whileHover={{ rotate: 360 }}

@@ -595,8 +595,9 @@ app.post("/api/workouts", authMiddleware, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       
       const xpGain = type === 'quest' ? 50 : type === 'challenge' ? 25 : (15 + sets * 1 + Math.floor(reps * 0.1));
-      db.run(`UPDATE users SET xp = xp + ? WHERE id = ?`, [xpGain, uid], (uerr) => {
-        if (uerr) console.error(uerr);
+      // Use server-side handler to apply XP, handle level-ups, award stat points, and update soft caps
+      statCalc.handleAddXp(db, uid, xpGain, (xpErr, result) => {
+        if (xpErr) console.error('Failed to add workout XP:', xpErr.message);
       });
 
       // Award 1 stat point on challenge completion
@@ -632,7 +633,10 @@ app.post("/api/meals", authMiddleware, (req, res) => {
     [uid, name, calories],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
-      db.run(`UPDATE users SET xp = xp + ? WHERE id = ?`, [5, uid]);
+      // Use server-side handler to apply meal XP (5 XP), handle level-ups, and award stat points
+      statCalc.handleAddXp(db, uid, 5, (xpErr) => {
+        if (xpErr) console.error('Failed to add meal XP:', xpErr.message);
+      });
       res.json({ id: this.lastID, name, calories });
     }
   );
