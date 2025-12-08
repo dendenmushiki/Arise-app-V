@@ -67,14 +67,6 @@ export default function WorkoutPreviewModal() {
                       <h3 className="text-2xl font-bold quest-title">{cat.label}</h3>
                       <p className="text-sm text-gray-400 mt-1">No equipment • Quick session</p>
                     </div>
-                    <motion.button
-                      whileHover={{ scale: 1.2 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={close}
-                      className="text-gray-400 hover:text-red-500 transition"
-                    >
-                      <X size={24} strokeWidth={2.5} />
-                    </motion.button>
                   </div>
 
                   <div className="mt-4 text-gray-300">
