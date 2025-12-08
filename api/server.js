@@ -74,16 +74,6 @@ db.serialize(() => {
     FOREIGN KEY(userId) REFERENCES users(id)
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS meals (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId INTEGER,
-    name TEXT,
-    calories INTEGER,
-    date TEXT DEFAULT CURRENT_DATE,
-    createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(userId) REFERENCES users(id)
-  )`);
-
   db.run(`CREATE TABLE IF NOT EXISTS achievements (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER,
@@ -599,7 +589,7 @@ app.post('/api/update-border', authMiddleware, (req, res) => {
 
 // Workouts
 app.post("/api/workouts", authMiddleware, (req, res) => {
-  const { name, sets = 0, reps = 0, duration = 0, loggedOnly = 0, type = 'workout' } = req.body;
+  const { name, sets = 0, reps = 0, duration = 0, loggedOnly = 0, type = 'workout', difficulty = 'beginner', intensity = 'normal' } = req.body;
   const uid = req.user.id;
   
   db.run(
@@ -608,17 +598,53 @@ app.post("/api/workouts", authMiddleware, (req, res) => {
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       
-      const xpGain = type === 'quest' ? 50 : type === 'challenge' ? 25 : (15 + sets * 1 + Math.floor(reps * 0.1));
+      // Phase 1 & 2 XP Rebalancing:
+      // Quests: 50 XP (fixed)
+      // Challenges: scale by difficulty (beginner=20, intermediate=30, hard=40)
+      // Manual workouts: 15 + (sets*2) + (reps*0.5) - rebalanced formula
+      // Phase 2: Intensity bonus for timed workouts (normal=0, high=5, very-high=10)
+      let xpGain;
+      if (type === 'quest') {
+        xpGain = 50;
+      } else if (type === 'challenge') {
+        const difficultyMap = { 'beginner': 20, 'intermediate': 30, 'hard': 40 };
+        xpGain = difficultyMap[difficulty] || 20;
+        // Phase 2: Apply intensity bonus to challenges too
+        const intensityMap = { 'normal': 0, 'high': 5, 'very-high': 10 };
+        xpGain += intensityMap[intensity] || 0;
+      } else {
+        xpGain = 15 + (sets * 2) + Math.floor(reps * 0.5);
+        // Phase 2: Apply intensity bonus for timed workouts (duration > 0, no sets/reps)
+        if (duration > 0 && sets === 0 && reps === 0) {
+          xpGain = 5 + duration * 1; // Base formula: 5 + (duration * 1)
+          const intensityMap = { 'normal': 0, 'high': 5, 'very-high': 10 };
+          xpGain += intensityMap[intensity] || 0;
+        }
+      }
       // Use server-side handler to apply XP, handle level-ups, award stat points, and update soft caps
       statCalc.handleAddXp(db, uid, xpGain, (xpErr, result) => {
         if (xpErr) console.error('Failed to add workout XP:', xpErr.message);
       });
 
-      // Award 1 stat point on challenge completion
+      // Award 1 stat point for every 5 challenges completed
       if (type === 'challenge') {
-        db.run(`UPDATE users SET unspent_stat_points = unspent_stat_points + 1 WHERE id = ?`, [uid], (statErr) => {
-          if (statErr) console.error('Failed to award challenge stat point:', statErr.message);
-        });
+        db.get(
+          `SELECT COUNT(*) as challenge_count FROM workouts WHERE userId = ? AND type = 'challenge'`,
+          [uid],
+          (countErr, row) => {
+            if (countErr) {
+              console.error('Failed to count challenges:', countErr.message);
+              return;
+            }
+            // Award 1 stat point when total challenges completed is a multiple of 5
+            const totalChallenges = (row?.challenge_count || 0) + 1; // +1 for the current challenge
+            if (totalChallenges % 5 === 0) {
+              db.run(`UPDATE users SET unspent_stat_points = unspent_stat_points + 1 WHERE id = ?`, [uid], (statErr) => {
+                if (statErr) console.error('Failed to award challenge stat point:', statErr.message);
+              });
+            }
+          }
+        );
       }
 
       res.json({ id: this.lastID, name, sets, reps, duration, loggedOnly: loggedOnly ? 1 : 0, type });
@@ -633,36 +659,6 @@ app.get("/api/workouts", authMiddleware, (req, res) => {
     (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ workouts: rows });
-    }
-  );
-});
-
-// Meals
-app.post("/api/meals", authMiddleware, (req, res) => {
-  const { name, calories = 0 } = req.body;
-  const uid = req.user.id;
-  
-  db.run(
-    `INSERT INTO meals (userId, name, calories) VALUES (?, ?, ?)`,
-    [uid, name, calories],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      // Use server-side handler to apply meal XP (5 XP), handle level-ups, and award stat points
-      statCalc.handleAddXp(db, uid, 5, (xpErr) => {
-        if (xpErr) console.error('Failed to add meal XP:', xpErr.message);
-      });
-      res.json({ id: this.lastID, name, calories });
-    }
-  );
-});
-
-app.get("/api/meals", authMiddleware, (req, res) => {
-  db.all(
-    `SELECT * FROM meals WHERE userId = ? ORDER BY createdAt DESC LIMIT 200`,
-    [req.user.id],
-    (err, rows) => {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ meals: rows });
     }
   );
 });
@@ -1085,6 +1081,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
                   instructions: poolQuest.instructions,
                   mediaType: poolQuest.mediaType,
                   mediaUrl: poolQuest.mediaUrl,
+                  completedToday: false, // New quest, not completed yet
                 });
 
                 res.json({ quest: responseQuest, nextUnlock: tomorrow.getTime() });
@@ -1106,6 +1103,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
           instructions: poolQuest.instructions,
           mediaType: poolQuest.mediaType,
           mediaUrl: poolQuest.mediaUrl,
+          completedToday: row?.completed === 1 || row?.completed === true, // Check if already completed
         });
 
         res.json({ quest: responseQuest, nextUnlock: tomorrow.getTime() });
