@@ -94,6 +94,14 @@ export default function WorkoutPreviewModal() {
                       </div>
                     </div>
 
+                    {/* XP Reward Display */}
+                    <div className="mt-2 text-xs text-gray-400">
+                      XP Reward: <span className="text-cyan-400 font-semibold">
+                        {difficulty === 'beginner' ? '20' : difficulty === 'intermediate' ? '30' : '40'}
+                      </span> XP
+                      <div className="mt-1 text-gray-500">Stat Points: 1 per 5 challenges</div>
+                    </div>
+
                     <div className="mt-3">
                       <p className="font-semibold mb-1">Exercises</p>
                       {cat?.workout && cat.workout[difficulty] ? (
@@ -167,20 +175,20 @@ export default function WorkoutPreviewModal() {
       <WorkoutStartModal
         isOpen={showStart}
         onClose={() => setShowStart(false)}
-        onComplete={async () => {
+        onComplete={async (sessionData) => {
           setShowStart(false);
           setIsOpen(false);
           // Log challenge completion to the Recent list
           try {
-            const res = await api.post("/workouts", {
-              name: cat?.label || 'Challenge',
-              sets: 0,
-              reps: 0,
-              duration: 0,
-              type: 'challenge',
-            });
-
-            // Extract XP from response
+                    const res = await api.post("/workouts", {
+                      name: cat?.label || 'Challenge',
+                      sets: 0,
+                      reps: 0,
+                      duration: 0,
+                      type: 'challenge',
+                      difficulty: difficulty,
+                      intensity: sessionData?.intensity || 'normal', // Phase 2: Pass intensity
+                    });            // Extract XP from response
             const raw = (res?.data?.workout || res?.data) || res;
             const gainedXpCandidate =
               raw?.xp_gained ||
@@ -211,9 +219,9 @@ export default function WorkoutPreviewModal() {
               }
             }));
             
-            // Show stat point earned notification
-            setStatNotif('+1 Stat Point Earned!');
-            setTimeout(() => setStatNotif(null), 3000);
+            // Show stat point notification only if server indicates stat point awarded
+            // This will be handled by checking if user's stat points increased
+            // For now, we don't show automatic notification since it only happens every 5 challenges
           } catch (e) {
             console.error('Failed to log challenge activity:', e);
           }

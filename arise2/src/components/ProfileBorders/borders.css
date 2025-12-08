@@ -116,3 +116,115 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Dashboard / username / profile card effects per rank */
+.profile-welcome-card {
+  position: relative;
+  transition: box-shadow 0.3s ease, transform 0.25s ease;
+}
+
+/* Username glow base */
+.username-highlight {
+  display: inline-block;
+  transition: transform 0.2s ease, text-shadow 0.25s ease;
+}
+
+/* Rank D - basic */
+.dashboard-rankD .profile-welcome-card {
+  border: 1px solid rgba(139, 115, 85, 0.12);
+}
+.username-rankD {
+  color: #d6c7b0;
+}
+
+/* Rank C - soft blue glow */
+.dashboard-rankC .profile-welcome-card {
+  box-shadow: 0 6px 18px rgba(96,165,250,0.08);
+}
+.username-rankC {
+  color: #9ecbff;
+  text-shadow: 0 0 8px rgba(96,165,250,0.45);
+  animation: usernamePulseC 2.5s ease-in-out infinite;
+}
+@keyframes usernamePulseC {
+  0%,100% { transform: translateY(0); text-shadow: 0 0 6px rgba(96,165,250,0.35); }
+  50% { transform: translateY(-2px); text-shadow: 0 0 14px rgba(96,165,250,0.7); }
+}
+
+/* Rank B - purple shimmer and soft gradient sweep */
+.dashboard-rankB .profile-welcome-card {
+  box-shadow: 0 10px 30px rgba(129,140,248,0.12);
+  overflow: hidden;
+}
+.dashboard-rankB .profile-welcome-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 0%, rgba(129,140,248,0.06) 30%, rgba(129,140,248,0.12) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: sweepB 6s linear infinite;
+  pointer-events: none;
+}
+@keyframes sweepB {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+.username-rankB {
+  color: #cbd5ff;
+  text-shadow: 0 0 10px rgba(129,140,248,0.45);
+}
+
+/* Rank A - golden aura with subtle particles */
+.dashboard-rankA .profile-welcome-card {
+  box-shadow: 0 12px 40px rgba(251,191,36,0.12);
+}
+.dashboard-rankA .profile-welcome-card::after {
+  content: '';
+  position: absolute;
+  inset: -20% -10%;
+  background: radial-gradient(circle at 20% 20%, rgba(251,191,36,0.08), transparent 10%), radial-gradient(circle at 80% 80%, rgba(251,191,36,0.06), transparent 12%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+.username-rankA {
+  color: #ffeb9b;
+  text-shadow: 0 0 12px rgba(251,191,36,0.6);
+  animation: usernameSparkA 3s ease-in-out infinite;
+}
+@keyframes usernameSparkA {
+  0%,100% { text-shadow: 0 0 10px rgba(251,191,36,0.45); transform: translateY(0); }
+  50% { text-shadow: 0 0 22px rgba(251,191,36,0.85); transform: translateY(-3px); }
+}
+
+/* Rank S - dramatic sweep + multi-layer glow */
+.dashboard-rankS .profile-welcome-card {
+  box-shadow: 0 18px 60px rgba(239,68,68,0.18);
+  transform: translateZ(0);
+}
+.dashboard-rankS .profile-welcome-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(239,68,68,0.06), rgba(245,158,11,0.06), rgba(99,102,241,0.06));
+  mix-blend-mode: screen;
+  animation: rainbowSweep 4s linear infinite;
+  pointer-events: none;
+}
+@keyframes rainbowSweep {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.username-rankS {
+  color: #ffc7c7;
+  text-shadow: 0 0 18px rgba(239,68,68,0.9), 0 0 40px rgba(245,158,11,0.7);
+  animation: usernameSwayS 3.5s ease-in-out infinite;
+}
+@keyframes usernameSwayS {
+  0%,100% { transform: translateX(0) rotate(0deg); }
+  50% { transform: translateX(2px) rotate(-0.5deg); }
+}
+
+/* Make sure pseudo-elements don't cover interactive content */
+.profile-welcome-card::before, .profile-welcome-card::after {
+  pointer-events: none;
+}

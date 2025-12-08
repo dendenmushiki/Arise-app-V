@@ -19,7 +19,7 @@ const ATTRIBUTE_LABELS = {
   intelligence: 'Intelligence',
 };
 
-export default function AwakeningResults({ attributes, rank, softcaps = {}, onContinue, isLoading }) {
+export default function AwakeningResults({ attributes, rank, onContinue, isLoading }) {
   const [revealedAttributes, setRevealedAttributes] = useState([]);
   const [rankRevealed, setRankRevealed] = useState(false);
   const rankStyle = getRankStyle(rank);
@@ -62,7 +62,6 @@ export default function AwakeningResults({ attributes, rank, softcaps = {}, onCo
           const isRevealed = revealedAttributes.includes(key);
           const icon = ATTRIBUTE_ICONS[key];
           const label = ATTRIBUTE_LABELS[key];
-          const cap = softcaps ? softcaps[`${key}Cap`] : undefined;
 
           return (
             <StatCard
@@ -70,7 +69,6 @@ export default function AwakeningResults({ attributes, rank, softcaps = {}, onCo
               icon={icon}
               name={label}
               value={value}
-              cap={cap}
             />
           );
         })}

@@ -1,6 +1,4 @@
-export const calculateSoftCap = (level) => {
-  return Math.floor(10 * Math.pow(level, 1.2));
-};
+export const ATTRIBUTE_HARD_CAP = 100;
 
 export const calculateRank = (totalStats) => {
   if (totalStats >= 501) return 'S';
@@ -10,8 +8,15 @@ export const calculateRank = (totalStats) => {
   return 'D';
 };
 
-export const canIncreaseStat = (statValue, statCap) => {
-  return statValue < statCap;
+export const canIncreaseStat = (statValue) => {
+  return statValue < ATTRIBUTE_HARD_CAP;
+};
+
+export const getPointsForLevel = (level) => {
+  if (level >= 1 && level <= 20) return 2;
+  if (level >= 21 && level <= 50) return 4;
+  if (level >= 51 && level <= 100) return 6;
+  return 0;
 };
 
 export const calculateInitialStats = (input, level = 1) => {
@@ -32,19 +37,6 @@ export const calculateInitialStats = (input, level = 1) => {
     attrs = { strength: 1, agility: 1, stamina: 1, endurance: 1, intelligence: 1 };
   }
 
-  const cap = calculateSoftCap(level);
-  const softcaps = {
-    strengthCap: cap,
-    agilityCap: cap,
-    staminaCap: cap,
-    enduranceCap: cap,
-    intelligenceCap: cap,
-  };
-
-  Object.keys(attrs).forEach((k) => {
-    if (attrs[k] > softcaps[`${k}Cap`]) attrs[k] = softcaps[`${k}Cap`];
-  });
-
   const totalStats = Object.values(attrs).reduce((a, b) => a + b, 0);
 
   let rank = calculateRank(totalStats);
@@ -52,7 +44,7 @@ export const calculateInitialStats = (input, level = 1) => {
     rank = totalStats >= 51 ? 'C' : 'D';
   }
 
-  return { attributes: attrs, softcaps, totalStats, rank };
+  return { attributes: attrs, totalStats, rank };
 };
 
 export const addXPAndCheckLevel = (currentXp, amount, currentLevel) => {

@@ -96,7 +96,7 @@ export default function Workout() {
     setShowStartModal(false);
     // Wait for server to log workout and return XP, then show completion modal
     try {
-      const gained = await logWorkoutToBackend(false);
+      const gained = await logWorkoutToBackend(false, sessionData?.intensity || 'normal');
       setXpGained(gained || 0);
       setShowCompleteMsg(true);
       setTimeout(() => setShowCompleteMsg(false), 5000);
@@ -115,7 +115,7 @@ export default function Workout() {
     setTimeout(() => setToast(null), 3000);
   }
 
-  async function logWorkoutToBackend(loggedOnly = false) {
+  async function logWorkoutToBackend(loggedOnly = false, intensity = 'normal') {
     try {
       const res = await api.post("/workouts", {
         name,
@@ -123,6 +123,7 @@ export default function Workout() {
         reps: Number(reps),
         duration: Number(duration),
         loggedOnly: loggedOnly ? 1 : 0,
+        intensity: intensity, // Phase 2: Pass intensity for XP bonus
       });
 
       const raw = (res?.data?.workout || res?.data) || res;
@@ -167,11 +168,18 @@ export default function Workout() {
 
       let finalXp = Number(gainedXpCandidate) || 0;
       if (!hasXpFromServer) {
-        // Fallback estimator: duration (1 XP per minute) + sets*reps*0.2
+        // Phase 1 Rebalanced XP Estimation: 15 + (sets*2) + (reps*0.5)
         const setsNum = Number(raw?.sets ?? sets ?? 0) || 0;
         const repsNum = Number(raw?.reps ?? reps ?? 0) || 0;
         const durationNum = Number(raw?.duration ?? duration ?? 0) || 0;
-        const estimated = Math.max(1, Math.round(durationNum * 1 + setsNum * repsNum * 0.2));
+        let estimated;
+        if (setsNum > 0 || repsNum > 0) {
+          estimated = Math.max(5, 15 + (setsNum * 2) + Math.floor(repsNum * 0.5));
+        } else if (durationNum > 0) {
+          estimated = Math.max(5, 5 + durationNum * 1); // 5 base + 1 XP per minute
+        } else {
+          estimated = 5;
+        }
         finalXp = estimated;
       }
 

@@ -21,6 +21,7 @@ export const WorkoutStartModal = ({
   const [isMinimized, setIsMinimized] = useState(false);
   const [remainingMs, setRemainingMs] = useState(0);
   const [error, setError] = useState("");
+  const [intensity, setIntensity] = useState("normal"); // Phase 2: Track workout intensity (normal/high/very-high)
   const timerRef = useRef(null);
   const sessionRef = useRef(null);
 
@@ -130,6 +131,7 @@ export const WorkoutStartModal = ({
   const handleTimerComplete = (session) => {
     session.isActive = false;
     session.endTime = Date.now();
+    session.intensity = intensity; // Phase 2: Include intensity in session data
     saveSessionToStorage(session);
     onComplete(session);
     setTimeout(() => resetModal(), 500);
@@ -158,6 +160,7 @@ export const WorkoutStartModal = ({
     setTimeInput("30");
     setRemainingMs(0);
     setError("");
+    setIntensity("normal");
   };
 
   return (
@@ -323,6 +326,49 @@ export const WorkoutStartModal = ({
                       <Clock size={18} />
                       Keep the app open until the timer completes
                     </p>
+
+                    {/* Phase 2: Intensity Selector */}
+                    <div className="mb-6 p-4 rounded-xl bg-gray-800/50 border border-gray-700">
+                      <p className="text-xs text-gray-400 mb-3 font-semibold">INTENSITY LEVEL</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setIntensity('normal')}
+                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                            intensity === 'normal'
+                              ? 'bg-blue-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          NORMAL
+                        </button>
+                        <button
+                          onClick={() => setIntensity('high')}
+                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                            intensity === 'high'
+                              ? 'bg-orange-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          HIGH
+                        </button>
+                        <button
+                          onClick={() => setIntensity('very-high')}
+                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                            intensity === 'very-high'
+                              ? 'bg-red-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          VERY HIGH
+                        </button>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-400">
+                        Bonus: <span className="text-green-400 font-bold">
+                          {intensity === 'normal' ? '+0' : intensity === 'high' ? '+5' : '+10'}
+                        </span> XP
+                      </div>
+                    </div>
+
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}

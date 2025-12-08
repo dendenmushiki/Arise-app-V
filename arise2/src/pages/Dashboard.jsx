@@ -22,6 +22,9 @@ export default function Dashboard() {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [milestoneNotif, setMilestoneNotif] = useState(null);
 
+  // derive current rank letter for styling (D, C, B, A, S)
+  const rankLetter = (profile?.rank || user?.rank || 'D').toString().toUpperCase();
+
   useEffect(() => {
     (async () => {
       try {
@@ -158,7 +161,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Welcome Card - Enhanced with Profile */}
         <motion.section
-          className="lg:col-span-2 card p-6 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-md"
+          className={`lg:col-span-2 card p-6 bg-[#0d0e26] border border-violet-700 rounded-lg shadow-md profile-welcome-card dashboard-rank${rankLetter}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -203,11 +206,11 @@ export default function Dashboard() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
-                <h2 className="text-2xl font-bold text-white">{profile?.username || user?.username}</h2>
+                <h2 className={`text-2xl font-bold text-white username-highlight username-rank${rankLetter}`}>{profile?.username || user?.username}</h2>
                 <p className="text-violet-300 font-semibold mt-1">{profile?.title || 'Newly Awakened'}</p>
                 <div className="flex items-center gap-3 mt-3">
                   <span className="text-sm text-gray-400">Rank:</span>
-                  <span className="px-3 py-1 rounded-full bg-gradient-to-r from-violet-600 to-violet-500 text-white font-bold text-sm">
+                  <span className={`px-3 py-1 rounded-full text-white font-bold text-sm`}>
                     {profile?.rank || 'D'}
                   </span>
                 </div>

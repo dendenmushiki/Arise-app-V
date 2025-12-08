@@ -1,18 +1,30 @@
-const calculateSoftCap = (level) => {
-  const maxStat = Math.floor(10 * Math.pow(level, 1.2));
-  return maxStat;
-};
+const ATTRIBUTE_HARD_CAP = 100;
 
-const calculateRank = (totalStats) => {
-  if (totalStats >= 501) return 'S';
-  if (totalStats >= 251) return 'A';
-  if (totalStats >= 121) return 'B';
-  if (totalStats >= 51) return 'C';
+// Rank is determined by player level instead of total stats.
+// Ranges:
+// D: level 1–25
+// C: level 26–45
+// B: level 46–65
+// A: level 66–85
+// S: level 86–100
+const calculateRank = (level) => {
+  const lvl = Math.max(1, Math.min(100, Number(level) || 1));
+  if (lvl >= 86) return 'S';
+  if (lvl >= 66) return 'A';
+  if (lvl >= 46) return 'B';
+  if (lvl >= 26) return 'C';
   return 'D';
 };
 
-const canIncreaseStat = (statValue, statCap) => {
-  return statValue < statCap;
+const canIncreaseStat = (statValue) => {
+  return statValue < ATTRIBUTE_HARD_CAP;
+};
+
+const getPointsForLevel = (level) => {
+  if (level >= 1 && level <= 20) return 2;
+  if (level >= 21 && level <= 50) return 4;
+  if (level >= 51 && level <= 100) return 6;
+  return 0;
 };
 
 // Accepts either an object {strength,agility,...} with values in 1-10 or an answers array
@@ -44,33 +56,15 @@ const calculateInitialStats = (input, level = 1) => {
     attrs = { strength: 1, agility: 1, stamina: 1, endurance: 1, intelligence: 1 };
   }
 
-  const cap = calculateSoftCap(level);
-  const softcaps = {
-    strengthCap: cap,
-    agilityCap: cap,
-    staminaCap: cap,
-    enduranceCap: cap,
-    intelligenceCap: cap,
-  };
-
-  // enforce soft cap
-  Object.keys(attrs).forEach((k) => {
-    if (attrs[k] > softcaps[`${k}Cap`]) attrs[k] = softcaps[`${k}Cap`];
-  });
-
   const totalStats = Object.values(attrs).reduce((a, b) => a + b, 0);
 
-  // New users must start D or C only
-  let rank = calculateRank(totalStats);
-  if (rank === 'B' || rank === 'A' || rank === 'S') {
-    // if total would place higher, clamp to C at most
-    rank = totalStats >= 51 ? 'C' : 'D';
-  }
+  // Determine rank by level (not by totalStats)
+  const rank = calculateRank(level);
 
-  return { attributes: attrs, softcaps, totalStats, rank };
+  return { attributes: attrs, totalStats, rank };
 };
 
-// server-side helper that updates XP, checks level-up and adjusts soft caps, rank, and awards stat points
+// server-side helper that updates XP, checks level-up and awards stat points
 const handleAddXp = (db, userId, amount, callback) => {
   db.get(`SELECT xp, level, unspent_stat_points FROM users WHERE id = ?`, [userId], (err, userRow) => {
     if (err) return callback(err);
@@ -85,13 +79,14 @@ const handleAddXp = (db, userId, amount, callback) => {
     const levelUpThreshold = (lvl) => 100 * lvl;
 
     let leveled = false;
-    // Process all level-ups: subtract threshold for each level and award stat points
+    // Process all level-ups: subtract threshold for each level and award stat points based on new level
     // XP carries over to next level threshold (e.g., if 150 XP at level 1 with threshold 100,
     // level becomes 2 and xp becomes 50 for level 3 threshold of 200)
     while (xp >= levelUpThreshold(level)) {
       xp -= levelUpThreshold(level);
       level += 1;
-      statPointsAwarded += 3; // Award 3 stat points per level
+      const pointsThisLevel = getPointsForLevel(level);
+      statPointsAwarded += pointsThisLevel;
       leveled = true;
     }
 
@@ -101,49 +96,32 @@ const handleAddXp = (db, userId, amount, callback) => {
     db.run(`UPDATE users SET xp = ?, level = ?, unspent_stat_points = ? WHERE id = ?`, [xp, level, newStatPoints, userId], (uerr) => {
       if (uerr) return callback(uerr);
 
-      // Recalculate softcaps and update core_attributes
-      const cap = calculateSoftCap(level);
+      // Recalculate rank and update core_attributes (no soft caps)
       db.get(`SELECT * FROM core_attributes WHERE userId = ?`, [userId], (cErr, row) => {
         if (cErr) return callback(cErr);
 
-        const updates = {
-          strengthCap: cap,
-          agilityCap: cap,
-          staminaCap: cap,
-          enduranceCap: cap,
-          intelligenceCap: cap,
-        };
-
         if (!row) {
-          // create a record with zeros and caps
+          // create a record with zeros and rank based on the (possibly updated) level
+          const rankForLevel = calculateRank(level);
           db.run(
-            `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, rank, strengthCap, agilityCap, staminaCap, enduranceCap, intelligenceCap, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-            [userId, 0, 0, 0, 0, 0, 'D', cap, cap, cap, cap, cap],
+            `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, rank, createdAt, updatedAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+            [userId, 0, 0, 0, 0, 0, rankForLevel],
             (iErr) => {
               if (iErr) return callback(iErr);
-              return callback(null, { xp, level, leveled, statPointsAwarded });
+              return callback(null, { xp, level, leveled, statPointsAwarded, rank: rankForLevel });
             }
           );
         } else {
-          // Ensure attributes do not exceed new caps
-          const attrs = {
-            strength: row.strength > cap ? cap : row.strength,
-            agility: row.agility > cap ? cap : row.agility,
-            stamina: row.stamina > cap ? cap : row.stamina,
-            endurance: row.endurance > cap ? cap : row.endurance,
-            intelligence: row.intelligence > cap ? cap : row.intelligence,
-          };
-
-          const totalStats = attrs.strength + attrs.agility + attrs.stamina + attrs.endurance + attrs.intelligence;
-          const rank = calculateRank(totalStats);
+          // Use level-based rank regardless of raw attribute totals
+          const rankForLevel = calculateRank(level);
 
           db.run(
-            `UPDATE core_attributes SET strength = ?, agility = ?, stamina = ?, endurance = ?, intelligence = ?, rank = ?, strengthCap = ?, agilityCap = ?, staminaCap = ?, enduranceCap = ?, intelligenceCap = ?, updatedAt = CURRENT_TIMESTAMP WHERE userId = ?`,
-            [attrs.strength, attrs.agility, attrs.stamina, attrs.endurance, attrs.intelligence, rank, cap, cap, cap, cap, cap, userId],
+            `UPDATE core_attributes SET rank = ?, updatedAt = CURRENT_TIMESTAMP WHERE userId = ?`,
+            [rankForLevel, userId],
             (u2err) => {
               if (u2err) return callback(u2err);
-              return callback(null, { xp, level, leveled, statPointsAwarded, rank, softcaps: updates });
+              return callback(null, { xp, level, leveled, statPointsAwarded, rank: rankForLevel });
             }
           );
         }
@@ -153,9 +131,10 @@ const handleAddXp = (db, userId, amount, callback) => {
 };
 
 module.exports = {
-  calculateSoftCap,
+  ATTRIBUTE_HARD_CAP,
   calculateRank,
   canIncreaseStat,
+  getPointsForLevel,
   calculateInitialStats,
   handleAddXp,
 };

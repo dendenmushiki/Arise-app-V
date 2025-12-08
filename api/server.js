@@ -173,22 +173,8 @@ db.serialize(() => {
     }
   });
 
-  // Ensure soft cap columns exist on core_attributes (migration for existing DBs)
-  db.all("PRAGMA table_info(core_attributes)", (caErr, cols) => {
-    if (!caErr && cols) {
-      const capColumns = ['strengthCap', 'agilityCap', 'staminaCap', 'enduranceCap', 'intelligenceCap'];
-      capColumns.forEach((col) => {
-        const hasCol = cols.find((c) => c && c.name === col);
-        if (!hasCol) {
-          db.run(`ALTER TABLE core_attributes ADD COLUMN ${col} INTEGER DEFAULT 10`, (altErr) => {
-            if (altErr && !/duplicate column/i.test(altErr.message)) {
-              console.error(`Failed to add ${col} column:`, altErr.message);
-            }
-          });
-        }
-      });
-    }
-  });
+  // Note: Soft cap columns are no longer used (removed in favor of hard cap of 100)
+  // Existing softcap columns in DB are left intact but no longer referenced
 
   // Ensure profile columns exist on users (migration for existing DBs)
   db.all("PRAGMA table_info(users)", (uErr, cols) => {
@@ -207,6 +193,29 @@ db.serialize(() => {
         const hasCol = cols.find((c) => c && c.name === name);
         if (!hasCol) {
           db.run(`ALTER TABLE users ADD COLUMN ${name} ${type}`, (altErr) => {
+            if (altErr && !/duplicate column/i.test(altErr.message)) {
+              console.error(`Failed to add ${name} column:`, altErr.message);
+            }
+          });
+        }
+      });
+    }
+  });
+
+  // Ensure base stat columns exist on core_attributes (migration for existing DBs)
+  db.all("PRAGMA table_info(core_attributes)", (caErr, cols) => {
+    if (!caErr && cols) {
+      const baseStatColumns = [
+        { name: 'base_strength', type: 'INTEGER DEFAULT 0' },
+        { name: 'base_agility', type: 'INTEGER DEFAULT 0' },
+        { name: 'base_stamina', type: 'INTEGER DEFAULT 0' },
+        { name: 'base_endurance', type: 'INTEGER DEFAULT 0' },
+        { name: 'base_intelligence', type: 'INTEGER DEFAULT 0' },
+      ];
+      baseStatColumns.forEach(({ name, type }) => {
+        const hasCol = cols.find((c) => c && c.name === name);
+        if (!hasCol) {
+          db.run(`ALTER TABLE core_attributes ADD COLUMN ${name} ${type}`, (altErr) => {
             if (altErr && !/duplicate column/i.test(altErr.message)) {
               console.error(`Failed to add ${name} column:`, altErr.message);
             }
@@ -415,8 +424,8 @@ app.post("/api/initialize-stats", authMiddleware, (req, res) => {
 
     // Insert or update core_attributes with enforced caps
     db.run(
-      `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, rank, strengthCap, agilityCap, staminaCap, enduranceCap, intelligenceCap)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, rank, base_strength, base_agility, base_stamina, base_endurance, base_intelligence, strengthCap, agilityCap, staminaCap, enduranceCap, intelligenceCap)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(userId) DO UPDATE SET
          strength = excluded.strength,
          agility = excluded.agility,
@@ -424,13 +433,18 @@ app.post("/api/initialize-stats", authMiddleware, (req, res) => {
          endurance = excluded.endurance,
          intelligence = excluded.intelligence,
          rank = excluded.rank,
+         base_strength = excluded.base_strength,
+         base_agility = excluded.base_agility,
+         base_stamina = excluded.base_stamina,
+         base_endurance = excluded.base_endurance,
+         base_intelligence = excluded.base_intelligence,
          strengthCap = excluded.strengthCap,
          agilityCap = excluded.agilityCap,
          staminaCap = excluded.staminaCap,
          enduranceCap = excluded.enduranceCap,
          intelligenceCap = excluded.intelligenceCap,
          updatedAt = CURRENT_TIMESTAMP`,
-      [uid, attrs.strength, attrs.agility, attrs.stamina, attrs.endurance, attrs.intelligence, computedRank, softcaps.strengthCap, softcaps.agilityCap, softcaps.staminaCap, softcaps.enduranceCap, softcaps.intelligenceCap],
+      [uid, attrs.strength, attrs.agility, attrs.stamina, attrs.endurance, attrs.intelligence, computedRank, attrs.strength, attrs.agility, attrs.stamina, attrs.endurance, attrs.intelligence, softcaps.strengthCap, softcaps.agilityCap, softcaps.staminaCap, softcaps.enduranceCap, softcaps.intelligenceCap],
       function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({
@@ -716,14 +730,21 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
       if (!attrs) {
         const defaultCaps = { strengthCap: 10, agilityCap: 10, staminaCap: 10, enduranceCap: 10, intelligenceCap: 10 };
         const insertQuery = `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, strengthCap, agilityCap, staminaCap, enduranceCap, intelligenceCap, rank)
-                             VALUES (?, 0, 0, 0, 0, 0, ?, ?, ?, ?, ?, 'D')`;
-        db.run(insertQuery, [uid, defaultCaps.strengthCap, defaultCaps.agilityCap, defaultCaps.staminaCap, defaultCaps.enduranceCap, defaultCaps.intelligenceCap], function (insErr) {
+                 VALUES (?, 0, 0, 0, 0, 0, ?, ?, ?, ?, ?, ?)`;
+        const initialRank = statCalc.calculateRank((user && user.level) || 1);
+        db.run(insertQuery, [uid, defaultCaps.strengthCap, defaultCaps.agilityCap, defaultCaps.staminaCap, defaultCaps.enduranceCap, defaultCaps.intelligenceCap, initialRank], function (insErr) {
           if (insErr) return res.status(500).json({ error: insErr.message });
           // build attrs object to continue flow
           attrs = Object.assign({ userId: uid, strength: 0, agility: 0, stamina: 0, endurance: 0, intelligence: 0 }, defaultCaps, { rank: 'D' });
 
           // proceed to update attribute and spend points below
           const newValue = (Number(attrs[attribute]) || 0) + spendAmount;
+          
+          // Enforce hard cap of 100
+          if (newValue > statCalc.ATTRIBUTE_HARD_CAP) {
+            return res.status(400).json({ error: `attribute ${attribute} cannot exceed ${statCalc.ATTRIBUTE_HARD_CAP}` });
+          }
+          
           const newUnspent = availablePoints - spendAmount;
 
           const milestones = [10, 20, 30, 40, 50];
@@ -737,6 +758,17 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
 
             db.run(`UPDATE users SET unspent_stat_points = ? WHERE id = ?`, [newUnspent, uid], (deductErr) => {
               if (deductErr) return res.status(500).json({ error: deductErr.message });
+
+              // Recalculate rank based on total stats
+              db.get(`SELECT strength, agility, stamina, endurance, intelligence FROM core_attributes WHERE userId = ?`, [uid], (rankErr, updatedAttrs) => {
+                if (!rankErr && updatedAttrs) {
+                  // Rank is level-based now; use user's level rather than attribute totals
+                  const newRank = statCalc.calculateRank((user && user.level) || 1);
+                  db.run(`UPDATE core_attributes SET rank = ? WHERE userId = ?`, [newRank, uid], (rankUpdateErr) => {
+                    if (rankUpdateErr) console.error('Rank update error:', rankUpdateErr.message);
+                  });
+                }
+              });
 
               if (unlockedMilestone) {
                 const badgeId = `${attribute}_${unlockedMilestone}`;
@@ -776,6 +808,12 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
 
       // Update attribute and spend points
       const newValue = (Number(attrs[attribute]) || 0) + spendAmount;
+      
+      // Enforce hard cap of 100
+      if (newValue > statCalc.ATTRIBUTE_HARD_CAP) {
+        return res.status(400).json({ error: `attribute ${attribute} cannot exceed ${statCalc.ATTRIBUTE_HARD_CAP}` });
+      }
+      
       const newUnspent = availablePoints - spendAmount;
 
       // Check if we've hit any milestone thresholds (10, 20, 30, etc.)
@@ -794,6 +832,17 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
         // Deduct stat points from user
         db.run(`UPDATE users SET unspent_stat_points = ? WHERE id = ?`, [newUnspent, uid], (deductErr) => {
           if (deductErr) return res.status(500).json({ error: deductErr.message });
+
+          // Recalculate rank based on total stats
+          db.get(`SELECT strength, agility, stamina, endurance, intelligence FROM core_attributes WHERE userId = ?`, [uid], (rankErr, updatedAttrs) => {
+            if (!rankErr && updatedAttrs) {
+              // Rank is level-based now; use user's level rather than attribute totals
+              const newRank = statCalc.calculateRank((user && user.level) || 1);
+              db.run(`UPDATE core_attributes SET rank = ? WHERE userId = ?`, [newRank, uid], (rankUpdateErr) => {
+                if (rankUpdateErr) console.error('Rank update error:', rankUpdateErr.message);
+              });
+            }
+          });
 
           // Handle milestone unlocks
           if (unlockedMilestone) {
@@ -858,17 +907,53 @@ app.post('/api/stats/reset', authMiddleware, (req, res) => {
       return res.status(400).json({ error: `reset on cooldown. try again in ${daysRemaining} days.` });
     }
 
-    // Get current attributes to calculate total spent
-    db.get(`SELECT strength, agility, stamina, endurance, intelligence FROM core_attributes WHERE userId = ?`, [uid], (caErr, attrs) => {
+    // Get current attributes and base stats
+    db.get(`SELECT strength, agility, stamina, endurance, intelligence, base_strength, base_agility, base_stamina, base_endurance, base_intelligence FROM core_attributes WHERE userId = ?`, [uid], (caErr, attrs) => {
       if (caErr) return res.status(500).json({ error: caErr.message });
 
-      const totalSpent = (Number(attrs?.strength || 0) + Number(attrs?.agility || 0) + Number(attrs?.stamina || 0) + Number(attrs?.endurance || 0) + Number(attrs?.intelligence || 0));
+      // Handle legacy users: if base stats are all 0, set them to current stats (first reset migration)
+      const baseStrength = Number(attrs?.base_strength || 0);
+      const baseAgility = Number(attrs?.base_agility || 0);
+      const baseStamina = Number(attrs?.base_stamina || 0);
+      const baseEndurance = Number(attrs?.base_endurance || 0);
+      const baseIntelligence = Number(attrs?.base_intelligence || 0);
+      
+      const baseTotalIsZero = baseStrength === 0 && baseAgility === 0 && baseStamina === 0 && baseEndurance === 0 && baseIntelligence === 0;
+      
+      // If base stats are all zero but current stats are not, this is a legacy user - use current as base
+      const currentStrength = Number(attrs?.strength || 0);
+      const currentAgility = Number(attrs?.agility || 0);
+      const currentStamina = Number(attrs?.stamina || 0);
+      const currentEndurance = Number(attrs?.endurance || 0);
+      const currentIntelligence = Number(attrs?.intelligence || 0);
+      
+      const currentTotalIsZero = currentStrength === 0 && currentAgility === 0 && currentStamina === 0 && currentEndurance === 0 && currentIntelligence === 0;
+      
+      let finalBaseStrength = baseStrength;
+      let finalBaseAgility = baseAgility;
+      let finalBaseStamina = baseStamina;
+      let finalBaseEndurance = baseEndurance;
+      let finalBaseIntelligence = baseIntelligence;
+      
+      // For legacy users (base all 0, current not all 0), treat current as base
+      if (baseTotalIsZero && !currentTotalIsZero) {
+        finalBaseStrength = currentStrength;
+        finalBaseAgility = currentAgility;
+        finalBaseStamina = currentStamina;
+        finalBaseEndurance = currentEndurance;
+        finalBaseIntelligence = currentIntelligence;
+      }
+
+      // Calculate total spent (current - base)
+      const currentTotal = currentStrength + currentAgility + currentStamina + currentEndurance + currentIntelligence;
+      const baseTotal = finalBaseStrength + finalBaseAgility + finalBaseStamina + finalBaseEndurance + finalBaseIntelligence;
+      const totalSpent = currentTotal - baseTotal;
       const returnedPoints = (user.unspent_stat_points || 0) + totalSpent;
 
-      // Reset all attributes to 0
+      // Reset all attributes to base stats, and ensure base stats are set for legacy users
       db.run(
-        `UPDATE core_attributes SET strength = 0, agility = 0, stamina = 0, endurance = 0, intelligence = 0, rank = 'D' WHERE userId = ?`,
-        [uid],
+        `UPDATE core_attributes SET strength = ?, agility = ?, stamina = ?, endurance = ?, intelligence = ?, base_strength = ?, base_agility = ?, base_stamina = ?, base_endurance = ?, base_intelligence = ? WHERE userId = ?`,
+        [finalBaseStrength, finalBaseAgility, finalBaseStamina, finalBaseEndurance, finalBaseIntelligence, finalBaseStrength, finalBaseAgility, finalBaseStamina, finalBaseEndurance, finalBaseIntelligence, uid],
         (resetErr) => {
           if (resetErr) return res.status(500).json({ error: resetErr.message });
 

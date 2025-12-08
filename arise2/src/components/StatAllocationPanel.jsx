@@ -51,6 +51,13 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
   async function handleAllocate(attribute) {
     if (unspentPoints <= 0 || allocating) return;
 
+    // Client-side validation: check if this would exceed the hard cap of 100
+    const currentValue = Number(coreAttributes?.[attribute] || 0);
+    if (currentValue >= 100) {
+      alert(`${attribute} is already at maximum (100)`);
+      return;
+    }
+
     setAllocating(attribute);
     try {
       const res = await api.post('/api/stats/spend', { attribute, amount: 1 });
@@ -146,7 +153,7 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
           animate={{ opacity: 1, y: 0 }}
         >
           <div className="text-sm text-red-300 mb-3">
-            Reset all stats to 0? All spent points will be returned to your pool.
+            Reset all stats to base awakening values? All spent points will be returned to your pool.
           </div>
           <button
             onClick={handleReset}
@@ -164,6 +171,7 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
           const Icon = attr.icon;
           const value = Number(coreAttributes?.[attr.key] || 0);
           const isMaxed = unspentPoints === 0;
+          const isAtCap = value >= 100;
 
           return (
             <motion.div
@@ -187,22 +195,22 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
 
               {/* Current Value */}
               <div className="text-center mb-3">
-                <div className="text-2xl font-bold text-violet-400">{value}</div>
+                <div className="text-2xl font-bold text-violet-400">{value}/100</div>
               </div>
 
               {/* Allocate Button */}
               <motion.button
                 onClick={() => handleAllocate(attr.key)}
-                disabled={isMaxed || allocating === attr.key}
+                disabled={isMaxed || allocating === attr.key || isAtCap}
                 className={`w-full py-2 rounded-lg font-semibold text-sm transition-all ${
-                  isMaxed
+                  isMaxed || isAtCap
                     ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                     : 'bg-gradient-to-r ' + attr.color + ' text-white hover:shadow-lg'
                 }`}
-                whileHover={!isMaxed ? { scale: 1.05 } : {}}
-                whileTap={!isMaxed ? { scale: 0.95 } : {}}
+                whileHover={!isMaxed && !isAtCap ? { scale: 1.05 } : {}}
+                whileTap={!isMaxed && !isAtCap ? { scale: 0.95 } : {}}
               >
-                {allocating === attr.key ? 'Allocating...' : '+ Point'}
+                {allocating === attr.key ? 'Allocating...' : isAtCap ? 'Maxed' : '+ Point'}
               </motion.button>
             </motion.div>
           );

@@ -13,7 +13,6 @@ export default function AwakeningAssessmentModal({
   const [stage, setStage] = useState('quiz'); // 'quiz' or 'results'
   const [attributes, setAttributes] = useState(null);
   const [rank, setRank] = useState(null);
-  const [softcaps, setSoftcaps] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,7 +24,6 @@ export default function AwakeningAssessmentModal({
     const calc = calculateInitialStats(coreAttrs, 1);
     setAttributes(calc.attributes);
     setRank(calc.rank);
-    setSoftcaps(calc.softcaps);
     setStage('results');
   };
 
@@ -46,7 +44,6 @@ export default function AwakeningAssessmentModal({
         rank,
         level: 1,
         xp: 0,
-        softcaps: softcaps,
       });
       // Success - close modal and pass stats to parent callback
       onComplete(response.data.attributes);
@@ -113,7 +110,6 @@ export default function AwakeningAssessmentModal({
               <AwakeningResults
                 attributes={attributes}
                 rank={rank}
-                softcaps={softcaps}
                 onContinue={handleResultsComplete}
                 isLoading={isLoading}
               />

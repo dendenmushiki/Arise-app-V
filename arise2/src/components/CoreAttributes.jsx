@@ -199,7 +199,7 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
           <div className="flex items-center gap-2 bg-[#0b0c14] p-1 rounded">
                 <div className="flex items-center text-xs text-gray-300 mr-2">
                   <Info size={14} className="text-gray-400 mr-1" />
-                  <div className="text-gray-400">Bar shows {displayMode === 'percent' ? 'percent of soft cap' : 'absolute stat (scaled)'}</div>
+                  <div className="text-gray-400">Bar shows {displayMode === 'percent' ? 'percent of hard cap (100)' : 'absolute stat'}</div>
                 </div>
                 <button
                   onClick={() => fetchAttributes()}
@@ -253,22 +253,12 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
         </div>
       </div>
 
-      {/* Soft Caps & Reset Info Row */}
+      {/* Hard Cap Info Row */}
       <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="p-4 bg-[#0a0c18] border border-violet-600/30 rounded-xl">
-          <div className="text-sm text-gray-400">Soft Caps</div>
+          <div className="text-sm text-gray-400">Hard Cap</div>
           <div className="text-sm text-gray-200 mt-2">
-            {coreAttributes ? (
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>STR: {coreAttributes.strengthCap}</div>
-                <div>AGI: {coreAttributes.agilityCap}</div>
-                <div>STA: {coreAttributes.staminaCap}</div>
-                <div>END: {coreAttributes.enduranceCap}</div>
-                <div>INT: {coreAttributes.intelligenceCap}</div>
-              </div>
-            ) : (
-              <div className="text-xs text-gray-400">Caps will appear after Awakening</div>
-            )}
+            <div className="text-xs">All attributes capped at 100</div>
           </div>
         </div>
 
@@ -314,8 +304,8 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
           let displayPercent = 0;
           if (coreAttributes) {
             actualRaw = Number(coreAttributes[key] || 0);
-            capRaw = Number(coreAttributes[`${key}Cap`] || 10);
-            displayPercent = capRaw > 0 ? (actualRaw / capRaw) * 100 : 0;
+            capRaw = 100; // Hard cap is 100
+            displayPercent = (actualRaw / capRaw) * 100;
           } else {
             // fallback when no awakening/core attributes exist: use baseAttributes as percent
             displayPercent = Number(baseAttributes || 0);
