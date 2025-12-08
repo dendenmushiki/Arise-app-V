@@ -303,7 +303,9 @@ export default function Quest() {
   if (!quest && !isRestDay) return <div className="min-h-screen p-6 bg-gradient-to-br from-dark-navy to-dark-bg text-white">No quest found.</div>;
 
   const xp = quest?.xp ?? user?.xp ?? 0;
-  const levelInfo = xpToLevel(xp);
+  const questLevel = quest?.level ?? user?.level ?? 1;
+  // Pass xp remainder and level to xpToLevel for linear formula calculation
+  const levelInfo = xpToLevel(xp, questLevel);
   const level = levelInfo.level;
   const progress = levelInfo.progress;
 

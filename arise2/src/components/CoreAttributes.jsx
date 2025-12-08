@@ -164,7 +164,8 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
     return styles[rankLetter] || styles.C;
   };
 
-  const xpToNext = 50 * (level || 1) - (xp || 0);
+  // Linear XP formula: requiredXP = 100 * level
+  const xpToNext = 100 * (level || 1) - (xp || 0);
 
   return (
     <motion.section

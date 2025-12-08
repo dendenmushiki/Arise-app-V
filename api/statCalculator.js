@@ -80,9 +80,14 @@ const handleAddXp = (db, userId, amount, callback) => {
     let level = userRow.level || 1;
     let statPointsAwarded = 0;
 
-    const levelUpThreshold = (lvl) => 50 * lvl;
+    // Linear XP formula: requiredXP = 100 * level
+    // Level 1 requires 100 XP, Level 2 requires 200 XP, etc.
+    const levelUpThreshold = (lvl) => 100 * lvl;
 
     let leveled = false;
+    // Process all level-ups: subtract threshold for each level and award stat points
+    // XP carries over to next level threshold (e.g., if 150 XP at level 1 with threshold 100,
+    // level becomes 2 and xp becomes 50 for level 3 threshold of 200)
     while (xp >= levelUpThreshold(level)) {
       xp -= levelUpThreshold(level);
       level += 1;

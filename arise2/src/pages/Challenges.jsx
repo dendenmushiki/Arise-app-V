@@ -186,7 +186,7 @@ export default function Challenges() {
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                     {/* Icon section */}
-                    <div className="relative h-40 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center border-b border-violet-700/30">
+                    <div className="relative h-40 bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center border-b border-violet-700/30 rounded-2xl mt-3">
                       <motion.div
                         className="text-violet-400"
                         whileHover={{ rotate: 360 }}
