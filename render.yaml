@@ -1,24 +1,27 @@
 services:
-  # ============================
+  # ==========================
   # FRONTEND (Vite React)
-  # ============================
-  - type: static_site
-    name: arise-frontend
-    rootDir: arise2
+  # ==========================
+  - name: arise-frontend
+    type: web
+    env: static
     buildCommand: npm install && npm run build
     staticPublishPath: dist
-    envVars:
-      - key: VITE_API_URL
-        value: https://arise-api.onrender.com   # replace after backend deploys
+    autoDeploy: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
-  # ============================
-  # BACKEND (Node REST API)
-  # ============================
-  - type: web
-    name: arise-api
-    rootDir: api
+  # ==========================
+  # BACKEND (Node.js API)
+  # ==========================
+  - name: arise-backend
+    type: web
     env: node
     buildCommand: npm install
     startCommand: node server.js
-    plan: free
-    autoDeploy: true
+    autoDeploy: false
+    envVars:
+      - key: PORT
+        value: 5000
