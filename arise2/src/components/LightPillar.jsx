@@ -27,7 +27,7 @@ const LightPillar = ({
   const timeRef = useRef(0);
   const [webGLSupported, setWebGLSupported] = useState(true);
 
-  // Check WebGL support
+  // Tingnan ang WebGL support
   useEffect(() => {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -44,7 +44,7 @@ const LightPillar = ({
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    // Scene setup
+    // Setup ng Scene
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -77,7 +77,6 @@ const LightPillar = ({
       return new THREE.Vector3(color.r, color.g, color.b);
     };
 
-    // Shader material
     const vertexShader = `
       varying vec2 vUv;
       void main() {
@@ -275,7 +274,7 @@ const LightPillar = ({
     };
     rafRef.current = requestAnimationFrame(animate);
 
-    // Handle resize with debouncing
+    // Handle resize gamit ang debouncing
     let resizeTimeout = null;
     const handleResize = () => {
       if (resizeTimeout) {

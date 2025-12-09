@@ -132,7 +132,7 @@ button:hover {
 }
 
 /* ==================== NUMBER INPUTS ==================== */
-/* Hide native increment/decrement controls on number inputs */
+/* pANGIT TIGNAN INCREMENT/DECRMEENT DI BAGAY SA KULAY  */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -140,7 +140,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 input[type="number"] {
-  -moz-appearance: textfield; /* Firefox */
+  -moz-appearance: textfield;
   appearance: textfield;
 }
 
@@ -228,7 +228,7 @@ input[type="number"] {
 
 /* ==================== CHAT SCROLLBAR / SCROLL GUTTER ==================== */
 .chat-scroll {
-  /* ensure scrollbar doesn't overlap content in modern browsers */
+  /* sCROLLBAR SHOULD BE GOODLOOKING AT DI GA OVERLAP */
   scrollbar-gutter: stable both-edges;
 }
 
@@ -248,13 +248,11 @@ input[type="number"] {
   border: none;
 }
 
-/* Firefox */
 .chat-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(20, 24, 40, 0.8) transparent;
 }
 
-/* small right padding so scrollbar won't visually overlap card inner content */
 .card.chat-scroll { padding-right: 1rem; }
 
 /* ==================== RESPONSIVE ==================== */

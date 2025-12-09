@@ -19,7 +19,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb' }));
 
-// Configure multer for file uploads
+// tamang file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -42,7 +42,7 @@ const db = new sqlite3.Database('./arise.db', (err) => {
   else console.log('Connected to arise.db');
 });
 
-// Create tables
+// Lumikha ng mga talahanayan
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -145,7 +145,7 @@ db.serialize(() => {
     FOREIGN KEY(userId) REFERENCES users(id)
   )`);
 
-  // Ensure `loggedOnly` column exists on older DBs (safe check)
+  // Tiyaking ang `loggedOnly` column ay umiiral sa mas lumang DBs (ligtas na check)
   db.all("PRAGMA table_info(workouts)", (perr, cols) => {
     if (!perr) {
       const hasLogged = cols && cols.find && cols.find((c) => c && c.name === 'loggedOnly');
@@ -163,10 +163,10 @@ db.serialize(() => {
     }
   });
 
-  // Note: Soft cap columns are no longer used (removed in favor of hard cap of 100)
-  // Existing softcap columns in DB are left intact but no longer referenced
+  // Tandaan: Ang soft cap columns ay hindi na ginagamit (tinanggal kapalit ng hard cap ng 100)
+  // Ang umiiral na softcap columns sa DB ay naiwan na walang bago pero hindi na nare-reference
 
-  // Ensure profile columns exist on users (migration for existing DBs)
+  // Tiyaking ang profile columns ay umiiral sa users (migration para sa umiiral na DBs)
   db.all("PRAGMA table_info(users)", (uErr, cols) => {
     if (!uErr && cols) {
       const profileColumns = [
@@ -192,7 +192,7 @@ db.serialize(() => {
     }
   });
 
-  // Ensure base stat columns exist on core_attributes (migration for existing DBs)
+  // Tiyaking ang base stat columns ay umiiral sa core_attributes (migration para sa umiiral na DBs)
   db.all("PRAGMA table_info(core_attributes)", (caErr, cols) => {
     if (!caErr && cols) {
       const baseStatColumns = [
@@ -300,7 +300,7 @@ app.get("/api/profile", authMiddleware, (req, res) => {
       
       if (!row) return res.status(404).json({ error: 'user not found' });
 
-      // Parse badges array (stored as JSON string in DB)
+      // I-parse ang badges array (na-store bilang JSON string sa DB)
       let badges = [];
       try {
         badges = row.badges ? JSON.parse(row.badges) : [];
@@ -308,10 +308,10 @@ app.get("/api/profile", authMiddleware, (req, res) => {
         badges = [];
       }
 
-      // Fetch core attributes for badge/title unlocking logic
+      // Kunin ang core attributes para sa badge/title unlocking logic
       db.get(`SELECT * FROM core_attributes WHERE userId = ?`, [req.user.id], (caErr, attrs) => {
         if (!caErr && attrs) {
-          // Prepare user stats object for badge checking
+          // Ihanda ang user stats object para sa badge checking
           const userStats = {
             level: row.level,
             xp: row.xp,
@@ -325,7 +325,7 @@ app.get("/api/profile", authMiddleware, (req, res) => {
             intelligence: attrs.intelligence,
           };
 
-          // Count completed quests
+          // Bilangan ang na-complete na quests
           db.get(
             `SELECT COUNT(*) as count FROM quests WHERE userId = ? AND completed = 1`,
             [req.user.id],
@@ -334,7 +334,7 @@ app.get("/api/profile", authMiddleware, (req, res) => {
                 userStats.questsCompleted = questRow.count;
               }
 
-              // Check for new badge unlocks
+              // Suriin para sa mga bagong badge unlocks
               const unlockedBadges = badgeSystem.checkAndUnlockBadges(userStats, attrs);
               const newBadges = unlockedBadges.filter((b) => !badges.includes(b));
 
@@ -344,24 +344,24 @@ app.get("/api/profile", authMiddleware, (req, res) => {
                   `UPDATE users SET badges = ? WHERE id = ?`,
                   [JSON.stringify(badges), req.user.id],
                   () => {
-                    // Badge update succeeded, continue
+                    // Badge update ay nagtagumpay, magpatuloy
                   }
                 );
               }
 
-              // Check for new title unlock
+              // Suriin para sa bagong title unlock
               const newTitle = titleUnlocker.checkAndUnlockTitles(userStats, attrs);
               if (newTitle !== row.title) {
                 db.run(
                   `UPDATE users SET title = ? WHERE id = ?`,
                   [newTitle, req.user.id],
                   () => {
-                    // Title update succeeded
+                    // Title update ay nagtagumpay
                   }
                 );
               }
 
-              // Return profile data
+              // Ibalik ang profile data
               res.json({
                 user: {
                   ...row,
@@ -380,17 +380,17 @@ app.get("/api/profile", authMiddleware, (req, res) => {
   );
 });
 
-// Initialize Stats (Awakening Assessment)
+// I-initialize ang Stats (Awakening Assessment)
 app.post("/api/initialize-stats", authMiddleware, (req, res) => {
   const { userId, strength, agility, stamina, endurance, intelligence, rank, level, xp } = req.body;
   const uid = req.user.id;
 
-  // Ensure user is initializing their own stats
+  // Tiyaking ang user ay nag-initialize ng kanilang sariling stats
   if (userId !== uid) {
     return res.status(403).json({ error: "unauthorized" });
   }
 
-  // Accept partial inputs; coerce to numbers where present
+  // Tumanggap ng partial inputs; i-coerce sa numbers kung saan present
   const inputAttrs = {
     strength: strength != null ? Number(strength) : undefined,
     agility: agility != null ? Number(agility) : undefined,
@@ -402,17 +402,17 @@ app.post("/api/initialize-stats", authMiddleware, (req, res) => {
   const userLevel = Math.max(1, Number(level) || 1);
   const userXp = Number(xp) || 0;
 
-  // Calculate initial stats and softcaps (this will enforce level-based soft caps and clamp new-user rank)
+  // Kalkulahin ang initial stats at softcaps (ito ay mag-enforce ng level-based soft caps at mag-clamp ng new-user rank)
   const calc = statCalc.calculateInitialStats(inputAttrs, userLevel);
   const attrs = calc.attributes;
   const softcaps = calc.softcaps;
   const computedRank = calc.rank;
 
-  // Persist user's xp and level into users table
+  // I-persist ang user's xp at level sa users table
   db.run(`UPDATE users SET xp = ?, level = ? WHERE id = ?`, [userXp, userLevel, uid], (uerr) => {
     if (uerr) return res.status(500).json({ error: uerr.message });
 
-    // Insert or update core_attributes with enforced caps
+    // I-insert o i-update ang core_attributes na may enforced caps
     db.run(
       `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, rank, base_strength, base_agility, base_stamina, base_endurance, base_intelligence, strengthCap, agilityCap, staminaCap, enduranceCap, intelligenceCap)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -453,7 +453,7 @@ app.post("/api/initialize-stats", authMiddleware, (req, res) => {
   });
 });
 
-// Get User Core Attributes
+// Kunin ang User Core Attributes
 app.get("/api/core-attributes", authMiddleware, (req, res) => {
   db.get(
     `SELECT * FROM core_attributes WHERE userId = ?`,
@@ -479,7 +479,7 @@ app.post('/api/add-xp', authMiddleware, (req, res) => {
   });
 });
 
-// Update User Avatar (Preset)
+// I-update ang User Avatar (Preset)
 app.post('/api/update-avatar', authMiddleware, (req, res) => {
   const uid = req.user.id;
   const { avatarUrl } = req.body;
@@ -587,7 +587,7 @@ app.post('/api/update-border', authMiddleware, (req, res) => {
   );
 });
 
-// Workouts
+// Mga Workout
 app.post("/api/workouts", authMiddleware, (req, res) => {
   const { name, sets = 0, reps = 0, duration = 0, loggedOnly = 0, type = 'workout', difficulty = 'beginner', intensity = 'normal' } = req.body;
   const uid = req.user.id;
@@ -621,12 +621,12 @@ app.post("/api/workouts", authMiddleware, (req, res) => {
           xpGain += intensityMap[intensity] || 0;
         }
       }
-      // Use server-side handler to apply XP, handle level-ups, award stat points, and update soft caps
+      // Gamitin ang server-side handler para mag-apply ng XP, harapin ang level-ups, magbigay ng stat points, at i-update ang soft caps
       statCalc.handleAddXp(db, uid, xpGain, (xpErr, result) => {
         if (xpErr) console.error('Failed to add workout XP:', xpErr.message);
       });
 
-      // Award 1 stat point for every 5 challenges completed
+      // Magbigay ng 1 stat point para sa bawat 5 challenges na na-complete
       if (type === 'challenge') {
         db.get(
           `SELECT COUNT(*) as challenge_count FROM workouts WHERE userId = ? AND type = 'challenge'`,
@@ -636,7 +636,7 @@ app.post("/api/workouts", authMiddleware, (req, res) => {
               console.error('Failed to count challenges:', countErr.message);
               return;
             }
-            // Award 1 stat point when total challenges completed is a multiple of 5
+            // Magbigay ng 1 stat point kapag total challenges completed ay multiple ng 5
             const totalChallenges = (row?.challenge_count || 0) + 1; // +1 for the current challenge
             if (totalChallenges % 5 === 0) {
               db.run(`UPDATE users SET unspent_stat_points = unspent_stat_points + 1 WHERE id = ?`, [uid], (statErr) => {
@@ -663,7 +663,7 @@ app.get("/api/workouts", authMiddleware, (req, res) => {
   );
 });
 
-// Achievements
+// Mga Achievement
 app.get("/api/achievements", authMiddleware, (req, res) => {
   db.all(
     `SELECT * FROM achievements WHERE userId = ? ORDER BY earnedAt DESC`,
@@ -675,7 +675,7 @@ app.get("/api/achievements", authMiddleware, (req, res) => {
   );
 });
 
-// Messages
+// Mga Mensahe
 app.get("/api/messages", (req, res) => {
   db.all(
     `SELECT * FROM messages ORDER BY createdAt DESC LIMIT 100`,
@@ -722,7 +722,7 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
 
     db.get(`SELECT * FROM core_attributes WHERE userId = ?`, [uid], (caErr, attrs) => {
       if (caErr) return res.status(500).json({ error: caErr.message });
-      // If core attributes row is missing (user hasn't initialized awakening), create a default row
+      // Kung ang core attributes row ay missing (user ay hindi pa nag-initialize ng awakening), lumikha ng default row
       if (!attrs) {
         const defaultCaps = { strengthCap: 10, agilityCap: 10, staminaCap: 10, enduranceCap: 10, intelligenceCap: 10 };
         const insertQuery = `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, strengthCap, agilityCap, staminaCap, enduranceCap, intelligenceCap, rank)
@@ -730,13 +730,13 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
         const initialRank = statCalc.calculateRank((user && user.level) || 1);
         db.run(insertQuery, [uid, defaultCaps.strengthCap, defaultCaps.agilityCap, defaultCaps.staminaCap, defaultCaps.enduranceCap, defaultCaps.intelligenceCap, initialRank], function (insErr) {
           if (insErr) return res.status(500).json({ error: insErr.message });
-          // build attrs object to continue flow
+          // bumuo ng attrs object para magpatuloy ang flow
           attrs = Object.assign({ userId: uid, strength: 0, agility: 0, stamina: 0, endurance: 0, intelligence: 0 }, defaultCaps, { rank: 'D' });
 
-          // proceed to update attribute and spend points below
+          // magpatuloy para i-update ang attribute at gumastos ng points sa ibaba
           const newValue = (Number(attrs[attribute]) || 0) + spendAmount;
           
-          // Enforce hard cap of 100
+          // Ipataw ang hard cap ng 100
           if (newValue > statCalc.ATTRIBUTE_HARD_CAP) {
             return res.status(400).json({ error: `attribute ${attribute} cannot exceed ${statCalc.ATTRIBUTE_HARD_CAP}` });
           }
@@ -755,10 +755,10 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
             db.run(`UPDATE users SET unspent_stat_points = ? WHERE id = ?`, [newUnspent, uid], (deductErr) => {
               if (deductErr) return res.status(500).json({ error: deductErr.message });
 
-              // Recalculate rank based on total stats
+              // I-recalculate ang rank base sa total stats
               db.get(`SELECT strength, agility, stamina, endurance, intelligence FROM core_attributes WHERE userId = ?`, [uid], (rankErr, updatedAttrs) => {
                 if (!rankErr && updatedAttrs) {
-                  // Rank is level-based now; use user's level rather than attribute totals
+                  // Ang rank ay level-based na ngayon; gamitin ang user's level kaysa sa attribute totals
                   const newRank = statCalc.calculateRank((user && user.level) || 1);
                   db.run(`UPDATE core_attributes SET rank = ? WHERE userId = ?`, [newRank, uid], (rankUpdateErr) => {
                     if (rankUpdateErr) console.error('Rank update error:', rankUpdateErr.message);
@@ -788,13 +788,13 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
                   }
                 );
 
-                // emit socket event if available
+                // i-emit ang socket event kung available
                 try {
                   io && io.to(`user_${uid}`).emit('stat_milestone', { userId: uid, attribute, milestone: unlockedMilestone, badge_name: badgeName, border_name: borderName });
                 } catch (emitErr) {}
               }
 
-              // respond with updated values
+              // tumugon na may updated values
               return res.json({ attribute, newValue, unspentPoints: newUnspent, unlockedMilestone: unlockedMilestone || null, badgeName: unlockedMilestone ? `${attribute.charAt(0).toUpperCase() + attribute.slice(1)} Master (${unlockedMilestone})` : null, borderName: unlockedMilestone ? `${attribute.charAt(0).toUpperCase() + attribute.slice(1)} Border ${unlockedMilestone}` : null });
             });
           });
@@ -812,27 +812,27 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
       
       const newUnspent = availablePoints - spendAmount;
 
-      // Check if we've hit any milestone thresholds (10, 20, 30, etc.)
+      // Suriin kung kami ay tumama sa anumang milestone thresholds (10, 20, 30, etc.)
       const milestones = [10, 20, 30, 40, 50];
       const currentMilestone = Math.floor((Number(attrs[attribute]) || 0) / 10) * 10;
       const newMilestone = Math.floor(newValue / 10) * 10;
       const unlockedMilestone = newMilestone > currentMilestone ? newMilestone : null;
 
-      // Update core_attributes
+      // I-update ang core_attributes
       const updateFields = [attribute, newValue, uid];
       const updateQuery = `UPDATE core_attributes SET ${attribute} = ? WHERE userId = ?`;
 
       db.run(updateQuery, [newValue, uid], (updateErr) => {
         if (updateErr) return res.status(500).json({ error: updateErr.message });
 
-        // Deduct stat points from user
+        // I-deduct ang stat points mula sa user
         db.run(`UPDATE users SET unspent_stat_points = ? WHERE id = ?`, [newUnspent, uid], (deductErr) => {
           if (deductErr) return res.status(500).json({ error: deductErr.message });
 
-          // Recalculate rank based on total stats
+          // I-recalculate ang rank base sa total stats
           db.get(`SELECT strength, agility, stamina, endurance, intelligence FROM core_attributes WHERE userId = ?`, [uid], (rankErr, updatedAttrs) => {
             if (!rankErr && updatedAttrs) {
-              // Rank is level-based now; use user's level rather than attribute totals
+              // Ang rank ay level-based na ngayon; gamitin ang user's level kaysa sa attribute totals
               const newRank = statCalc.calculateRank((user && user.level) || 1);
               db.run(`UPDATE core_attributes SET rank = ? WHERE userId = ?`, [newRank, uid], (rankUpdateErr) => {
                 if (rankUpdateErr) console.error('Rank update error:', rankUpdateErr.message);
@@ -840,14 +840,14 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
             }
           });
 
-          // Handle milestone unlocks
+          // Harapin ang milestone unlocks
           if (unlockedMilestone) {
             const badgeId = `${attribute}_${unlockedMilestone}`;
             const badgeName = `${attribute.charAt(0).toUpperCase() + attribute.slice(1)} Master (${unlockedMilestone})`;
             const borderId = `border_${attribute}_${unlockedMilestone}`;
             const borderName = `${attribute.charAt(0).toUpperCase() + attribute.slice(1)} Border ${unlockedMilestone}`;
 
-            // Try to unlock badge
+            // Subukan na unlock ang badge
             db.run(
               `INSERT OR IGNORE INTO unlocked_badges (userId, badge_id, badge_name) VALUES (?, ?, ?)`,
               [uid, badgeId, badgeName],
@@ -856,7 +856,7 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
               }
             );
 
-            // Try to unlock border
+            // Subukan na unlock ang border
             db.run(
               `INSERT OR IGNORE INTO unlocked_borders (userId, border_id, border_name) VALUES (?, ?, ?)`,
               [uid, borderId, borderName],
@@ -865,7 +865,7 @@ app.post('/api/stats/spend', authMiddleware, (req, res) => {
               }
             );
 
-            // Emit milestone event to chat clients
+            // I-emit ang milestone event sa chat clients
             try {
               io.emit('stat_milestone', { userId: uid, attribute, milestone: unlockedMilestone, badgeName, borderName });
             } catch (e) {
@@ -953,7 +953,7 @@ app.post('/api/stats/reset', authMiddleware, (req, res) => {
         (resetErr) => {
           if (resetErr) return res.status(500).json({ error: resetErr.message });
 
-          // Update user: return points and set cooldown date
+          // I-update ang user: ibalik ang points at i-set ang cooldown date
           db.run(
             `UPDATE users SET unspent_stat_points = ?, last_reset_date = ? WHERE id = ?`,
             [returnedPoints, now.toISOString(), uid],
@@ -973,9 +973,9 @@ app.post('/api/stats/reset', authMiddleware, (req, res) => {
   });
 });
 
-// Quests
-// Quest pool: include optional `instructions` and `media` metadata (not persisted to DB),
-// frontend will use these fields when present to show GIFs/videos and clear exercise steps.
+// Mga Quest
+// Quest pool: kasama ang optional `instructions` at `media` metadata (hindi i-persist sa DB),
+// ang frontend ay gagamitin ang mga fields na ito kapag present para ipakita ang GIFs/videos at i-clear ang exercise steps.
 const QUEST_POOL = [
   {
     title: "Morning Run",
@@ -1035,7 +1035,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
   const today = now.toISOString().split('T')[0];
   const weekday = now.getDay(); // 0 = Sun, 6 = Sat
 
-  // If Saturday, return a rest day (do not create a quest)
+  // Kung Saturday, ibalik ang rest day (huwag lumikha ng quest)
   if (weekday === 6) {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1052,7 +1052,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
 
       if (!row) {
-        // Deterministic rotation based on day index and user id to ensure a different quest each day.
+        // Deterministic rotation base sa day index at user id para masiguro ang iba't ibang quest araw-araw.
         const dayIndex = Math.floor(new Date(today).getTime() / 86400000);
         const poolIndex = (dayIndex + uid) % QUEST_POOL.length;
         const poolQuest = QUEST_POOL[poolIndex];
@@ -1076,7 +1076,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 tomorrow.setHours(0, 0, 0, 0);
 
-                // Attach non-persistent metadata (instructions, media) to the response.
+                // Mag-attach ng non-persistent metadata (instructions, media) sa response.
                 const responseQuest = Object.assign({}, newRow, {
                   instructions: poolQuest.instructions,
                   mediaType: poolQuest.mediaType,
@@ -1090,7 +1090,7 @@ app.get("/api/quests/today/:userId", authMiddleware, (req, res) => {
           }
         );
       } else {
-        // Ensure response includes any metadata by computing today's pool index.
+        // Tiyaking ang response ay may kasamang metadata sa pamamagitan ng pag-compute ng today's pool index.
         const dayIndex = Math.floor(new Date(today).getTime() / 86400000);
         const poolIndex = (dayIndex + uid) % QUEST_POOL.length;
         const poolQuest = QUEST_POOL[poolIndex];
@@ -1140,10 +1140,10 @@ app.post("/api/quests/complete/:userId", authMiddleware, (req, res) => {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ error: "quest not found" });
       
-      // Use statCalc handler to apply XP and check for level up
+      // Gamitin ang statCalc handler para mag-apply ng XP at suriin ang level up
       statCalc.handleAddXp(db, uid, 50, (xpErr, result) => {
         if (xpErr) console.error('Failed to apply quest XP:', xpErr);
-        // return success regardless of internal xp application
+        // ibalik ang success anuman ang internal xp application
         res.json({ message: "quest completed! +50 xp", xpResult: result || null });
       });
     }
@@ -1171,7 +1171,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    // user disconnected
+    // user ay nag-disconnect
   });
 });
 

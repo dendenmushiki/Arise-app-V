@@ -22,7 +22,7 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
   });
 
   useEffect(() => {
-    // Refetch core attributes whenever xp or level changes so the UI stays in sync
+    // kunin CA sa server kapag nagbago ang xp o level para sync sa UI
     fetchAttributes();
   }, [xp, level]);
 
@@ -40,7 +40,7 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
       setCoreAttributes(res.data.attributes || null);
       setRank(res.data.attributes && res.data.attributes.rank ? res.data.attributes.rank : null);
 
-      // Also fetch unspent points
+      // Kunin ang unspent points
       const profileRes = await api.get('/profile');
       setUnspentPoints(profileRes.data.user?.unspent_stat_points || 0);
 
@@ -116,8 +116,6 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
     }
   }
 
-  // Use awakening stats if available, otherwise derive defaults from level.
-  // Scale default visual value by level * 10 so level 1 => 10%, level 5 => 50%, etc.
   const baseAttributes = coreAttributes ? undefined : Math.min((Number(level) || 1) * 10, 100);
   
   const attributes = [
@@ -307,7 +305,7 @@ export default function CoreAttributes({ xp, level, userId, onMilestoneUnlock })
             capRaw = 100; // Hard cap is 100
             displayPercent = (actualRaw / capRaw) * 100;
           } else {
-            // fallback when no awakening/core attributes exist: use baseAttributes as percent
+            // if no awakening attributes gamitin ang baseAttributes bilang percent
             displayPercent = Number(baseAttributes || 0);
             capRaw = 100;
             actualRaw = Math.round((displayPercent / 100) * capRaw);

@@ -94,7 +94,7 @@ export default function Workout() {
 
   async function handleModalComplete(sessionData) {
     setShowStartModal(false);
-    // Wait for server to log workout and return XP, then show completion modal
+    // kAPAG NA LOG NA ANG WORKOUT AT MAY NABIGAY NA xp, PAKITA NA coMPLETE MODAL GOODS
     try {
       const gained = await logWorkoutToBackend(false, sessionData?.intensity || 'normal');
       setXpGained(gained || 0);
@@ -102,7 +102,6 @@ export default function Workout() {
       setTimeout(() => setShowCompleteMsg(false), 5000);
     } catch (err) {
       console.error("Error logging workout on completion:", err);
-      // Fallback: still show modal but XP may be 0
       setShowCompleteMsg(true);
       setTimeout(() => setShowCompleteMsg(false), 5000);
     }
@@ -123,12 +122,12 @@ export default function Workout() {
         reps: Number(reps),
         duration: Number(duration),
         loggedOnly: loggedOnly ? 1 : 0,
-        intensity: intensity, // Phase 2: Pass intensity for XP bonus
+        intensity: intensity,
       });
 
       const raw = (res?.data?.workout || res?.data) || res;
       const nowIso = new Date().toISOString();
-      // prefer server-provided loggedOnly when present, otherwise fall back to caller
+      // Tag para Logged lang siya if di workout
       const serverLogged = raw && (raw.loggedOnly === 1 || raw.loggedOnly === true || raw.loggedOnly === "1");
       const newWorkout = {
         id: raw?.id || `local-${Date.now()}`,
@@ -149,10 +148,6 @@ export default function Workout() {
       setReps(0);
       setDuration(0);
       setWorkoutInProgress(false);
-
-      // (debug removed)
-
-      // Extract XP gained from response (support multiple possible field names)
       const gainedXpCandidate =
         raw?.xp_gained ||
         raw?.xpGained ||
@@ -176,7 +171,7 @@ export default function Workout() {
         if (setsNum > 0 || repsNum > 0) {
           estimated = Math.max(5, 15 + (setsNum * 2) + Math.floor(repsNum * 0.5));
         } else if (durationNum > 0) {
-          estimated = Math.max(5, 5 + durationNum * 1); // 5 base + 1 XP per minute
+          estimated = Math.max(5, 5 + durationNum * 1);
         } else {
           estimated = 5;
         }

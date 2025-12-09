@@ -17,13 +17,11 @@ export default function AwakeningQuiz({ onComplete }) {
     };
     setAnswers(newAnswers);
 
-    // Auto-advance to next question
     if (currentQuestionIndex < AWAKENING_QUESTIONS.length - 1) {
       setTimeout(() => {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       }, 300);
     } else {
-      // Quiz complete
       setTimeout(() => {
         onComplete(newAnswers);
       }, 300);

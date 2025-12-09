@@ -25,7 +25,7 @@ export default function AwakeningResults({ attributes, rank, onContinue, isLoadi
   const rankStyle = getRankStyle(rank);
 
   useEffect(() => {
-    // Reveal attributes one by one
+    // I-reveal ang attributes isa sa isa
     const attributeKeys = Object.keys(attributes);
     attributeKeys.forEach((key, idx) => {
       setTimeout(() => {
@@ -33,7 +33,7 @@ export default function AwakeningResults({ attributes, rank, onContinue, isLoadi
       }, 300 + idx * 200);
     });
 
-    // Reveal rank after all attributes
+    // I-reveal ang rank pagkatapos ng lahat ng attributes
     setTimeout(() => {
       setRankRevealed(true);
     }, 300 + attributeKeys.length * 200 + 300);

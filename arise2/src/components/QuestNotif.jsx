@@ -36,7 +36,7 @@ export default function QuestNotif() {
       const today = new Date().toISOString().slice(0, 10);
       const seenKey = `questNotifSeen:${user.id}:${today}`;
       const sessionFlag = sessionStorage.getItem('showQuestNotif');
-      // Only show if it's a forced request (login/manual trigger) or if it's the first session load for this day
+      // Salamat, Di na siya magpapakita baat pasok sa dashboard
       let shouldShow = (sessionFlag && !localStorage.getItem(seenKey)) || forceShowRequest;
 
       if (shouldShow) {
@@ -126,7 +126,7 @@ export default function QuestNotif() {
           className="absolute -top-4 -left-4 w-5 h-5 rounded-full bg-neon-purple shadow-lg shadow-neon-purple"
           animate={{ 
             scale: [1, 1.4, 1], 
-            y: [0, -6, 0]  // float up and down
+            y: [0, -6, 0]  
           }}
           transition={{ 
             duration: 1.5, 

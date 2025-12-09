@@ -1,8 +1,6 @@
-// Title progression system based on achievements and stats
-
 const TITLES = {
   'Newly Awakened': {
-    condition: () => true, // default, always available
+    condition: () => true,
     description: 'Welcome to your journey',
   },
   'Dungeon Explorer': {
@@ -52,8 +50,6 @@ const checkAndUnlockTitles = (user, attributes) => {
     }
   });
 
-  // Return highest tier title that user qualifies for
-  // Priority order: S-tier, A-tier, B-tier, C-tier, default
   const priorityOrder = [
     'Uncrowned King',
     'Monarch Candidate',

@@ -29,7 +29,7 @@ export default function Chat() {
       if (msg.senderId) setOnlineUsers((prev) => new Set(prev).add(msg.senderId));
     });
 
-    // Update user avatar when server emits change
+    // Update server pag nagbago profile pecture
     socket.on("user_updated", (payload) => {
       try {
         if (!payload || !payload.id) return;
@@ -38,11 +38,9 @@ export default function Chat() {
           if (exists) {
             return prev.map((u) => (u.id === payload.id ? { ...u, avatar: payload.avatar } : u));
           }
-          // If user not present, simply return prev (could fetch /api/users if desired)
           return prev;
         });
       } catch (e) {
-        // ignore
       }
     });
 
@@ -104,7 +102,6 @@ export default function Chat() {
         return;
       }
     } catch (err) {
-      // ignore and fallback to default
     }
     img.src = "/assets/avatars/default-avatar.svg";
   }

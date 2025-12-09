@@ -17,7 +17,7 @@ export default function Login() {
 
   useEffect(() => {
     const t = setTimeout(() => setShowForm(true), 5500);
-    // small delay so the pillar is visible before the floating logo appears
+    // delay para sa logo mag appear
     const logoTimer = setTimeout(() => setShowLogo(true), 2000);
     return () => {
       clearTimeout(t);
@@ -120,7 +120,6 @@ export default function Login() {
                     layoutId="arise-logo"
                     className="wd-25px h-25px object-contain mb-4"
                     transition={{ type: 'spring', stiffness: 90, damping: 16, mass: 1.1 }}
-                    // slower layout transition to match floating logo
                     layoutTransition={{ duration: 1.2, ease: 'easeInOut' }}
                   />
           <h1

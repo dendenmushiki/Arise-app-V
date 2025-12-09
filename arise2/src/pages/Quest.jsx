@@ -109,7 +109,7 @@ export default function Quest() {
   const [xpGained, setXpGained] = useState(0);
   const [xpFromServer, setXpFromServer] = useState(false);
   const [completedSteps, setCompletedSteps] = useState([]);
-  const [questCompletedToday, setQuestCompletedToday] = useState(false); // Track if quest already completed today
+  const [questCompletedToday, setQuestCompletedToday] = useState(false);
 
   useEffect(() => {
     if (!token || !user) navigate("/");
@@ -127,7 +127,7 @@ export default function Quest() {
     }
   }, [toast]);
 
-  // Auto-navigate back to dashboard a few seconds after completion
+  // Balik dashboard pagkatapos quest
   useEffect(() => {
     if (!completeMsg) return;
     const t = setTimeout(() => navigate('/home'), 3000);
@@ -149,7 +149,7 @@ export default function Quest() {
         const q = res.data.quest || res.data;
         setIsRestDay(false);
         setQuest(q);
-        // Check if quest was already completed today
+        // Tapos naba quest today?
         setQuestCompletedToday(q?.completedToday === true || q?.completed === true || false);
         setForm({
           title: q?.title || "",
@@ -251,14 +251,12 @@ export default function Quest() {
       const res = await api.post(`/quests/complete/${user.id}`, { questId: quest.id });
       const raw = res?.data || res;
       setCompleteMsg(raw.message || res.data?.message || "Quest complete!");
-      setQuestCompletedToday(true); // Disable quest for the rest of the day
-
-      // Extract XP if present, support multiple field names
+      setQuestCompletedToday(true); // Kung tapos na Quest, No more today
       const gainedXpCandidate = raw?.xp_gained || raw?.xpGained || raw?.xp || raw?.xpEarned || raw?.xp_gain || raw?.xpGain || 0;
       const hasXpFromServer = !!(raw?.xp_gained || raw?.xpGained || raw?.xp || raw?.xpEarned || raw?.xp_gain || raw?.xpGain);
       let finalXp = Number(gainedXpCandidate) || 0;
       if (!hasXpFromServer) {
-        // Fallback estimate: use quest baseDuration and baseReps
+        // XP formula for Workout.jsx
         const setsNum = Number(0) || 0;
         const repsNum = Number(quest?.baseReps ?? 0) || 0;
         const durationNum = Number(quest?.baseDuration ?? 0) || 0;
@@ -273,7 +271,7 @@ export default function Quest() {
       } catch (e) {
         console.error("Could not refresh profile", e);
       }
-      // Log quest completion to the Recent list
+      // Loggin the Workouts
       try {
         await api.post("/workouts", {
           name: quest.title,
@@ -309,7 +307,6 @@ export default function Quest() {
 
   const xp = quest?.xp ?? user?.xp ?? 0;
   const questLevel = quest?.level ?? user?.level ?? 1;
-  // Pass xp remainder and level to xpToLevel for linear formula calculation
   const levelInfo = xpToLevel(xp, questLevel);
   const level = levelInfo.level;
   const progress = levelInfo.progress;

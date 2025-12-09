@@ -1,4 +1,4 @@
-// Badge system for achievements
+// Badgin system para sa achievements
 
 const BADGES = {
   'First Steps': {

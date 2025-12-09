@@ -99,7 +99,7 @@ export default function Challenges() {
     navigate('/');
   }
 
-  // Listen for challenge completion events from WorkoutPreviewModal
+  // Hintayin ang challenge completion
   React.useEffect(() => {
     const handleChallengeComplete = (e) => {
       const { xp, isFromServer } = e.detail || {};

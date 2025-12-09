@@ -1,11 +1,3 @@
-/**
- * Awakening Assessment Utilities
- * Calculates core attributes and rank from quiz responses
- */
-
-/**
- * Quiz questions for the Awakening Assessment
- */
 export const AWAKENING_QUESTIONS = [
   {
     id: 1,
@@ -119,10 +111,6 @@ export const AWAKENING_QUESTIONS = [
   },
 ];
 
-/**
- * Calculate core attributes from quiz responses
- * Returns an object with strength, agility, stamina, endurance, intelligence (1-10 scale)
- */
 export function calculateCoreAttributes(answers) {
   const attributes = {
     strength: 0,
@@ -140,7 +128,6 @@ export function calculateCoreAttributes(answers) {
     intelligence: 0,
   };
 
-  // Aggregate scores by attribute
   answers.forEach((answer) => {
     const question = AWAKENING_QUESTIONS.find((q) => q.id === answer.questionId);
     if (question) {
@@ -155,7 +142,7 @@ export function calculateCoreAttributes(answers) {
     }
   });
 
-  // Average the scores and scale to 1-10 (beginner-friendly: 2-6 range)
+  // I-average ang scores at i-scale sa 1-10 (beginner-friendly: 2-6 range)
   const finalAttributes = {};
   for (const [key, value] of Object.entries(attributes)) {
     const count = attributeCounts[key] || 1;
@@ -167,9 +154,9 @@ export function calculateCoreAttributes(answers) {
 }
 
 /**
- * Calculate rank from core attributes
- * Returns one of: D, C, B, A, S
- * New users max out at low B
+ * Mag-calculate ng rank mula sa core attributes
+ * Ibalik ang isa sa: D, C, B, A, S
+ * Ang mga bagong user ay umabot na lang hanggang sa mababang B
  */
 export function calculateRank(attributes) {
   const sum =
@@ -181,14 +168,13 @@ export function calculateRank(attributes) {
 
   const average = sum / 5;
 
-  // Rank scaling (new users max at B)
+  // Bagong user hanggang Rank B lang
   if (average < 1.5) return "D";
   if (average < 2.5) return "D";
   if (average < 3.5) return "C";
   if (average < 4.5) return "C";
-  if (average < 5.5) return "B"; // New user max
+  if (average < 5.5) return "B"; // ito oh
   if (average < 6.5) return "B";
-  // A and S are unreachable for new users
   return "C"; // Fallback
 }
 

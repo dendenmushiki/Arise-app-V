@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [milestoneNotif, setMilestoneNotif] = useState(null);
 
-  // derive current rank letter for styling (D, C, B, A, S)
+  // kunin ang current rank letter para sa styling (D, C, B, A, S)
   const rankLetter = (profile?.rank || user?.rank || 'D').toString().toUpperCase();
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export default function Dashboard() {
       try {
         const res = await api.get("/profile");
         setProfile(res.data.user);
-        // Trigger core attributes refetch after profile loads to ensure latest data
+        // Mag-trigger ng core attributes refetch pagkatapos ng profile load upang masiguro ang latest data
         if (user?.id) {
           await api.get("/core-attributes");
         }
@@ -42,7 +42,7 @@ export default function Dashboard() {
       }
     })();
 
-    // Listen for milestone unlock socket events
+    // Makinig para sa milestone unlock socket events
     const socket = io(window.location.origin, {
       reconnection: true,
       reconnectionDelay: 1000,
@@ -90,7 +90,6 @@ export default function Dashboard() {
 
   const xp = profile?.xp ?? user?.xp ?? 0;
   const profileLevel = profile?.level ?? user?.level ?? 1;
-  // Pass xp remainder and level to xpToLevel for linear formula calculation
   const { level, progress } = xpToLevel(xp, profileLevel);
 
   return (
@@ -183,7 +182,7 @@ export default function Dashboard() {
                       const el = e.target;
                       const src = el.src || (profile && profile.avatar) || '';
                       if (src && src.endsWith('.png')) {
-                        // try svg equivalent once
+                        // subukan ang svg equivalent ONCE
                         const svgSrc = src.replace(/\.png$/i, '.svg');
                         if (svgSrc !== src) {
                           el.onerror = null;

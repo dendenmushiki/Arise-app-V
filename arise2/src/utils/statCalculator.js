@@ -50,10 +50,9 @@ export const calculateInitialStats = (input, level = 1) => {
 export const addXPAndCheckLevel = (currentXp, amount, currentLevel) => {
   let xp = (currentXp || 0) + (amount || 0);
   let level = currentLevel || 1;
-  // Linear XP formula: requiredXP = 100 * level
+  // Linear na XP formula: requiredXP = 100 * level
   const levelUpThreshold = (lvl) => 100 * lvl;
   let leveled = false;
-  // Process all level-ups and carry over remainder XP to next threshold
   while (xp >= levelUpThreshold(level)) {
     xp -= levelUpThreshold(level);
     level += 1;

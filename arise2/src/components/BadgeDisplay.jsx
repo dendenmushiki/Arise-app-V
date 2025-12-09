@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-// Import badge data from backend (would normally come from API or bundled data)
+// I-import ang badge data mula sa backend (normal na magmumula mula sa API o bundled data)
 const BADGE_INFO = {
   first_steps: { icon: '👣', name: 'First Steps', description: 'Complete your first quest', category: 'Quest Milestone', categoryIcon: '⚔️' },
   quest_master: { icon: '⚔️', name: 'Quest Master', description: 'Complete 10 quests', category: 'Quest Milestone', categoryIcon: '⚔️' },

@@ -17,10 +17,7 @@ export default function AwakeningAssessmentModal({
   const [error, setError] = useState('');
 
   const handleQuizComplete = (answers) => {
-    // The quiz returns an array of { questionId, selectedValue } objects.
-    // Use the awakening-specific calculator to aggregate by attribute.
     const coreAttrs = calculateCoreAttributes(answers);
-    // Convert to shape expected by the stat calculator (1-10 scale will be enforced server-side)
     const calc = calculateInitialStats(coreAttrs, 1);
     setAttributes(calc.attributes);
     setRank(calc.rank);

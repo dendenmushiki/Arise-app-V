@@ -31,7 +31,7 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
       const coreRes = await api.get('/core-attributes');
       setCoreAttributes(coreRes.data.attributes);
 
-      // Check reset cooldown
+      // Tingnan ang reset cooldown
       if (profileRes.data.user?.last_reset_date) {
         const lastReset = new Date(profileRes.data.user.last_reset_date);
         const daysRemaining = Math.max(0, 7 - Math.floor((Date.now() - lastReset) / (1000 * 60 * 60 * 24)));
@@ -51,7 +51,6 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
   async function handleAllocate(attribute) {
     if (unspentPoints <= 0 || allocating) return;
 
-    // Client-side validation: check if this would exceed the hard cap of 100
     const currentValue = Number(coreAttributes?.[attribute] || 0);
     if (currentValue >= 100) {
       alert(`${attribute} is already at maximum (100)`);
@@ -63,11 +62,11 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
       const res = await api.post('/api/stats/spend', { attribute, amount: 1 });
       setUnspentPoints(res.data.unspentPoints);
 
-      // Refetch core attributes to show updated value
+      // I-refetch ang core attributes upang ipakita ang updated na value
       const coreRes = await api.get('/core-attributes');
       setCoreAttributes(coreRes.data.attributes);
 
-      // Show milestone unlock notification
+      // Ipakita ang milestone unlock notification
       if (res.data.unlockedMilestone && onMilestoneUnlock) {
         onMilestoneUnlock({
           attribute,
@@ -93,7 +92,7 @@ export default function StatAllocationPanel({ userId, onMilestoneUnlock }) {
       setUnspentPoints(res.data.returnedPoints);
       setResetCooldown(7);
 
-      // Refetch core attributes
+      // I-refetch ang core attributes
       const coreRes = await api.get('/core-attributes');
       setCoreAttributes(coreRes.data.attributes);
     } catch (e) {

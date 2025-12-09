@@ -187,7 +187,7 @@ export default function WorkoutPreviewModal() {
                       duration: 0,
                       type: 'challenge',
                       difficulty: difficulty,
-                      intensity: sessionData?.intensity || 'normal', // Phase 2: Pass intensity
+                      intensity: sessionData?.intensity || 'normal',
                     });            // Extract XP from response
             const raw = (res?.data?.workout || res?.data) || res;
             const gainedXpCandidate =
@@ -205,13 +205,11 @@ export default function WorkoutPreviewModal() {
 
             let finalXp = Number(gainedXpCandidate) || 0;
             if (!hasXpFromServer) {
-              // Fallback: small XP reward for completing a challenge
               finalXp = Math.max(5, Math.round(Math.random() * 15));
             }
 
             window.dispatchEvent(new CustomEvent('activityLogged'));
             
-            // Dispatch challenge completion event with XP
             window.dispatchEvent(new CustomEvent('challengeCompleted', {
               detail: {
                 xp: finalXp,
@@ -219,9 +217,8 @@ export default function WorkoutPreviewModal() {
               }
             }));
             
-            // Show stat point notification only if server indicates stat point awarded
-            // This will be handled by checking if user's stat points increased
-            // For now, we don't show automatic notification since it only happens every 5 challenges
+            // Notify tat point if stat point is awarded by server
+            // Per 5 challenges lang magkakastat point
           } catch (e) {
             console.error('Failed to log challenge activity:', e);
           }

@@ -1,12 +1,12 @@
 const ATTRIBUTE_HARD_CAP = 100;
 
-// Rank is determined by player level instead of total stats.
-// Ranges:
-// D: level 1–25
-// C: level 26–45
-// B: level 46–65
-// A: level 66–85
-// S: level 86–100
+// Rank ay base sa level di stats.
+// Mga hanay:
+// D: antas 1–25
+// C: antas 26–45
+// B: antas 46–65
+// A: antas 66–85
+// S: antas 86–100
 const calculateRank = (level) => {
   const lvl = Math.max(1, Math.min(100, Number(level) || 1));
   if (lvl >= 86) return 'S';
@@ -27,14 +27,14 @@ const getPointsForLevel = (level) => {
   return 0;
 };
 
-// Accepts either an object {strength,agility,...} with values in 1-10 or an answers array
+// Tumatanggap ng object na {strength,agility,...} na may values 1-10 o array ng mga sumagot
 const calculateInitialStats = (input, level = 1) => {
-  // If input is an array, reduce to attribute values (simple mapping)
+  // Kung ang input ay array, bawasan sa mga values ng attribute (simpleng mapping)
   let attrs = {};
   if (Array.isArray(input)) {
-    // Expect array of numbers 1-5 mapping to different attributes: distribute evenly
+    // Inaasahang array ng numbers 1-5 na naka-map sa iba't ibang attributes: i-distribute pantay
     const avg = Math.round(input.reduce((a, b) => a + b, 0) / input.length);
-    // Map average into 1-10 range
+    // I-map ang average sa hanay na 1-10
     const base = Math.max(1, Math.min(10, Math.round((avg / 5) * 9) + 1));
     attrs = {
       strength: base,
@@ -52,19 +52,19 @@ const calculateInitialStats = (input, level = 1) => {
       intelligence: Math.max(1, Math.min(10, Math.round(input.intelligence || input.int || 1))),
     };
   } else {
-    // fallback
+    // default na values
     attrs = { strength: 1, agility: 1, stamina: 1, endurance: 1, intelligence: 1 };
   }
 
   const totalStats = Object.values(attrs).reduce((a, b) => a + b, 0);
 
-  // Determine rank by level (not by totalStats)
+  // Tukuyin ang ranggo ayon sa antas (hindi base sa totalStats)
   const rank = calculateRank(level);
 
   return { attributes: attrs, totalStats, rank };
 };
 
-// server-side helper that updates XP, checks level-up and awards stat points
+// server-side na tumutulong na nag-update ng XP, tumatanggap ng level-up at nagbibigay ng stat points
 const handleAddXp = (db, userId, amount, callback) => {
   db.get(`SELECT xp, level, unspent_stat_points FROM users WHERE id = ?`, [userId], (err, userRow) => {
     if (err) return callback(err);
@@ -74,14 +74,14 @@ const handleAddXp = (db, userId, amount, callback) => {
     let level = userRow.level || 1;
     let statPointsAwarded = 0;
 
-    // Linear XP formula: requiredXP = 100 * level
-    // Level 1 requires 100 XP, Level 2 requires 200 XP, etc.
+    // Linear na XP formula: requiredXP = 100 * level
+    // Antas 1 ay nangangailangan ng 100 XP, Antas 2 ay nangangailangan ng 200 XP, atbp.
     const levelUpThreshold = (lvl) => 100 * lvl;
 
     let leveled = false;
-    // Process all level-ups: subtract threshold for each level and award stat points based on new level
-    // XP carries over to next level threshold (e.g., if 150 XP at level 1 with threshold 100,
-    // level becomes 2 and xp becomes 50 for level 3 threshold of 200)
+    // Iproseso ang lahat ng level-ups: ibawas ang threshold para sa bawat antas at magbigay ng stat points base sa bagong antas
+    // Ang XP ay nauumpisa sa susunod na level threshold (halimbawa, kung 150 XP sa antas 1 na may threshold 100,
+    // ang antas ay nagiging 2 at ang xp ay nagiging 50 para sa antas 3 na may threshold na 200)
     while (xp >= levelUpThreshold(level)) {
       xp -= levelUpThreshold(level);
       level += 1;
@@ -92,16 +92,16 @@ const handleAddXp = (db, userId, amount, callback) => {
 
     const newStatPoints = (userRow.unspent_stat_points || 0) + statPointsAwarded;
 
-    // Persist user xp, level, and stat points
+    // I-save ang user xp, antas, at stat points
     db.run(`UPDATE users SET xp = ?, level = ?, unspent_stat_points = ? WHERE id = ?`, [xp, level, newStatPoints, userId], (uerr) => {
       if (uerr) return callback(uerr);
 
-      // Recalculate rank and update core_attributes (no soft caps)
+      // I-recalculate ang ranggo at i-update ang core_attributes (walang soft caps)
       db.get(`SELECT * FROM core_attributes WHERE userId = ?`, [userId], (cErr, row) => {
         if (cErr) return callback(cErr);
 
         if (!row) {
-          // create a record with zeros and rank based on the (possibly updated) level
+          // lumikha ng record na may zeros at ranggo base sa (posibleng nag-update na) antas
           const rankForLevel = calculateRank(level);
           db.run(
             `INSERT INTO core_attributes (userId, strength, agility, stamina, endurance, intelligence, rank, createdAt, updatedAt)
@@ -113,7 +113,7 @@ const handleAddXp = (db, userId, amount, callback) => {
             }
           );
         } else {
-          // Use level-based rank regardless of raw attribute totals
+          // Gamitin ang level-based rank kahit ano ang raw attribute totals
           const rankForLevel = calculateRank(level);
 
           db.run(

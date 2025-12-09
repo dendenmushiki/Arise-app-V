@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp, Minus, X, Play, Clock, AlertCircle } from "lucide-react";
 
 const STORAGE_KEY = "activeWorkoutSession";
-const MIN_DURATION_MS = 30 * 60 * 1000; // 30 minutes minimum
+const MIN_DURATION_MS = 30 * 60 * 1000; // 30 minutes na minimum
 
 export const WorkoutStartModal = ({
   isOpen,
@@ -13,7 +13,7 @@ export const WorkoutStartModal = ({
   workoutId,
   type,
   title = type === "quest" ? "Start Daily Quest" : "Start Workout",
-  // initialDuration: minutes (number or numeric string). Only used to prefill when opening.
+  // 30 is the starting input for modal when opened
   initialDuration = null,
 }) => {
   const [timeInput, setTimeInput] = useState("30"); 
@@ -21,7 +21,7 @@ export const WorkoutStartModal = ({
   const [isMinimized, setIsMinimized] = useState(false);
   const [remainingMs, setRemainingMs] = useState(0);
   const [error, setError] = useState("");
-  const [intensity, setIntensity] = useState("normal"); // Phase 2: Track workout intensity (normal/high/very-high)
+  const [intensity, setIntensity] = useState("normal"); 
   const timerRef = useRef(null);
   const sessionRef = useRef(null);
 
@@ -32,7 +32,7 @@ export const WorkoutStartModal = ({
     };
   }, []);
 
-  // Update timeInput when modal opens and initialDuration changes, but only for workout type and if not started
+  // I-update ang timeInput kapag bumubukas ang modal at nagbabago ang initialDuration, pero para lamang sa workout type at kung hindi pa nagsimula
   useEffect(() => {
     if (isOpen && type === "workout" && !isStarted && initialDuration != null) {
       const mins = Number(initialDuration);
@@ -131,7 +131,7 @@ export const WorkoutStartModal = ({
   const handleTimerComplete = (session) => {
     session.isActive = false;
     session.endTime = Date.now();
-    session.intensity = intensity; // Phase 2: Include intensity in session data
+    session.intensity = intensity; 
     saveSessionToStorage(session);
     onComplete(session);
     setTimeout(() => resetModal(), 500);
