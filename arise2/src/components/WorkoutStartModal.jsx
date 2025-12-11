@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronUp, Minus, X, Play, Clock, AlertCircle } from "lucide-react";
 
 const STORAGE_KEY = "activeWorkoutSession";
-const MIN_DURATION_MS = 30 * 60 * 1000; // 30 minutes na minimum
+const MIN_DURATION_MS = 1 * 1 * 1000; // 30 minutes na minimum
 
 export const WorkoutStartModal = ({
   isOpen,
@@ -327,7 +327,7 @@ export const WorkoutStartModal = ({
                       Keep the app open until the timer completes
                     </p>
 
-                    {/* Phase 2: Intensity Selector */}
+                    {/* Intensity Selector */}
                     <div className="mb-6 p-4 rounded-xl bg-gray-800/50 border border-gray-700">
                       <p className="text-xs text-gray-400 mb-3 font-semibold">INTENSITY LEVEL</p>
                       <div className="flex gap-2">

@@ -18,7 +18,6 @@ const CATEGORIES = [
   { key: 'fatburn', label: 'Fat Burn', asset: '/assets/fatburn.svg', icon: Flame, duration: '35 min', wkKey: 'FatBurn' },
 ];
 
-// Workout dataset (static)
 const workoutData = {
   Fullbody: {
     beginner: ["Jumping Jacks (30s)", "Squats (12)", "Knee Push-ups (10)", "Glute bridge (12)", "Plank (20s)"],
